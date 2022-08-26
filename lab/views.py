@@ -26,7 +26,7 @@ def cloudbeds_webhook(request):
     if request.method == "POST":
         logging.debug("Cloudbeds webhook: POST received")
         data = json.loads(request.body)
-        logging.debug(data)
+        logging.debug("New Reservation: ", data["reservationID"])
         return HttpResponse("Cloudbeds webhook: POST received")
     else:
         logging.debug("Cloudbeds webhook: GET received")
