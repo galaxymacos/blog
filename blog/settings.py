@@ -9,21 +9,43 @@ https://docs.djangoproject.com/en/4.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.1/ref/settings/
 """
-
+import json
+import os
 from pathlib import Path
+
+import environ
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+env = environ.Env(
+    DEBUG=(bool, False),
+)
+
+environ.Env.read_env(BASE_DIR / '.env')
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-ya+$+#0cb+n%nrbs0ry@eaw-^)5gz!bp&cmu1$37q2coz%6h#2"
+SECRET_KEY = env("DJANGO_SECRET_KEY")
+
+CLOUDBEDS_CLIENT_ID = env('CLOUDBEDS_CLIENT_ID')
+CLOUDBEDS_CLIENT_SECRET = env('CLOUDBEDS_CLIENT_SECRET')
+TWILIO_ACCOUNT_SID = env('TWILIO_ACCOUNT_SID')
+TWILIO_AUTH_TOKEN = env('TWILIO_AUTH_TOKEN')
+TWILIO_PHONE_NUMBER = env('TWILIO_PHONE_NUMBER')
+RECEPTIONIST_PHONE_NUMBER = env('RECEPTIONIST_PHONE_NUMBER')
+MANAGER_PHONE_NUMBER = env('MANAGER_PHONE_NUMBER')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env('DEBUG')
+
+
+# Quick-start development settings - unsuitable for production
+# See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
+
+# SECURITY WARNING: don't run with debug turned on in production!
 
 ALLOWED_HOSTS = ["137.184.71.252", "localhost", "127.0.0.1"]
 
@@ -135,3 +157,12 @@ STATIC_ROOT = BASE_DIR / "static"
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+CONFIG_DATA = dict()
+if os.path.exists(BASE_DIR / 'config_data.json'):
+    with open("config_data.json", "r") as read_file:
+        CONFIG_DATA = json.load(read_file)
+else:
+    with open("config_data.json", "w") as write_file:
+        json.dump(CONFIG_DATA, write_file)
+
