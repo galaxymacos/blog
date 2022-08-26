@@ -26,7 +26,9 @@ def cloudbeds_webhook(request):
     if request.method == "POST":
         try:
             logging.debug("Cloudbeds webhook: POST received")
-            logging.debug(request.POST['Body'])
+            # Get the JSON data from the request body
+            data = json.loads(request.body)
+            logging.debug(data['event'])
         except Exception as e:
             logging.debug(e)
             logging.debug("Error parsing JSON")
