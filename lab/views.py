@@ -28,7 +28,7 @@ def cloudbeds_webhook(request):
             logging.debug("Cloudbeds webhook: POST received")
             # Get the JSON data from the request body
             data = json.loads(request.body)
-            logging.debug(data['event'])
+            logging.debug(f"New reservation with id: {data['reservationID']}")
         except Exception as e:
             logging.debug(e)
             logging.debug("Error parsing JSON")
