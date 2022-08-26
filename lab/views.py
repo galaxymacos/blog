@@ -1,3 +1,5 @@
+import json
+
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
@@ -23,6 +25,8 @@ def cloudbeds_webhook(request):
     logging.basicConfig(filename='example.log', encoding='utf-8', level=logging.DEBUG)
     if request.method == "POST":
         logging.debug("Cloudbeds webhook: POST received")
+        data = json.loads(request.body)
+        logging.debug(data)
         return HttpResponse("Cloudbeds webhook: POST received")
     else:
         logging.debug("Cloudbeds webhook: GET received")
