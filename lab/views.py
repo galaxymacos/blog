@@ -24,9 +24,14 @@ def twilio_webhook(request):
 def cloudbeds_webhook(request):
     logging.basicConfig(filename='example.log', encoding='utf-8', level=logging.DEBUG)
     if request.method == "POST":
-        logging.debug("Cloudbeds webhook: POST received")
-        data = json.loads(request.body)
-        logging.debug("New Reservation: ", data["reservationID"])
+        try:
+            logging.debug("Cloudbeds webhook: POST received")
+            logging.debug(request.POST)
+            data = json.loads(request.body)
+            logging.debug("New Reservation: ", data["reservationID"])
+        except Exception as e:
+            logging.debug(e)
+            logging.debug("Error parsing JSON")
         return HttpResponse("Cloudbeds webhook: POST received")
     else:
         logging.debug("Cloudbeds webhook: GET received")
