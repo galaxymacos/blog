@@ -133,7 +133,9 @@ def refresh():
         with open(BASE_DIR / "config_data.json", "w") as f:
             json.dump(local_config_data, f)
         # send_message(MANAGER_PHONE_NUMBER, "Access token refreshed")
+        logging.debug("Access token refreshed at {}".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
     except Exception as e:
+        logging.warning(f"Error refreshing access token at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         send_message(MANAGER_PHONE_NUMBER, "Access token refresh failed, error:" + str(e))
 
 
@@ -357,10 +359,9 @@ def send_checkin_procedure():
     -- Votre clé sera prête pour vous à la réception pour un enregistrement plus rapide si nous avons bien reçu votre paiement.
                 """
             send_message(guest[1], message)
-        send_message(MANAGER_PHONE_NUMBER, f"Checkin procedure sent to guest successfully.")
+        logging.debug("Checkin procedure sent at" + str(datetime.now()))
     except Exception as e:
-        send_message(MANAGER_PHONE_NUMBER, f"Error when sending check-in procedure to guests: {str(e)}")
-
+        logging.error(f"Error sending checkin procedure: {e}")
 
 def send_review_request():
     with open(BASE_DIR / "config_data.json", "r") as f:
@@ -406,9 +407,9 @@ def send_review_request():
                 send_message(guest_phone, message)
         if DEBUG:
             print(f"Send review request to {len(datas)} guests")
-        send_message(MANAGER_PHONE_NUMBER, f"Review request sent to guest successfully.")
+        logging.debug(f"Review request sent to guest successfully at {datetime.now()}")
     except Exception as e:
-        send_message(MANAGER_PHONE_NUMBER, f"Error when sending review request to guests: {str(e)}")
+        logging.error(f"Error sending review request: {e} at {datetime.now()}")
 
 
 def send_checkout_procedure():
@@ -442,9 +443,9 @@ def send_checkout_procedure():
                 print(f"{guest_name} reserves on {source_name}")
             title = f"Bonjour {guest_name.split()[0]}\n"
             send_message(guest_phone, title + body_message)
-        send_message(MANAGER_PHONE_NUMBER, f"Checkout procedure sent to guest successfully.")
+        logging.debug("Checkout procedure sent to guest successfully.")
     except Exception as e:
-        send_message(MANAGER_PHONE_NUMBER, f"Error when sending checkout procedure to guests: {str(e)}")
+        logging.debug(f"Error when sending checkout procedure to guests: {str(e)} at {datetime.now()}")
 
 
 def send_housekeeping_notice_to_guest():
@@ -483,9 +484,9 @@ def send_housekeeping_notice_to_guest():
             guest_phone = trim_phone(each_guest['guestPhone'])
             title_message = f"Bonjour {guest_name.split()[0]},\n"
             send_message(guest_phone, title_message + main_body_message)
-        send_message(MANAGER_PHONE_NUMBER, f"Housekeeping notice sent to guest. Room: {room_number_to_clean}")
+        logging.debug(f"Housekeeping notice sent to guest. Room: {room_number_to_clean} at {datetime.now()}")
     except Exception as e:
-        send_message(MANAGER_PHONE_NUMBER, f"Error when sending housekeeping notice to guests: {str(e)}")
+        logging.debug(f"Error when sending housekeeping notice to guests: {str(e)} at {datetime.now()}")
 
 
 def send_daily_summary():
@@ -508,8 +509,9 @@ def send_daily_summary():
         连住房数: {data['inHouse']}
         """
         send_message(MANAGER_PHONE_NUMBER, message)
+        logging.debug("Daily summary sent to manager successfully at {}".format(datetime.now()))
     except Exception as e:
-        send_message(MANAGER_PHONE_NUMBER, f"Error when sending daily report: {str(e)}")
+        logging.debug(f"Error when sending daily summary to manager: {str(e)} at {datetime.now()}")
 
 
 def trim_phone(phone):
