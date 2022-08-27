@@ -160,9 +160,9 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 CONFIG_DATA = dict()
 if os.path.exists(BASE_DIR / 'config_data.json'):
-    with open("config_data.json", "r") as read_file:
+    with open(BASE_DIR / "config_data.json", "r") as read_file:
         CONFIG_DATA = json.load(read_file)
 else:
-    with open("config_data.json", "w") as write_file:
+    with open(BASE_DIR / "config_data.json", "w") as write_file:
         json.dump(CONFIG_DATA, write_file)
 
