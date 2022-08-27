@@ -39,6 +39,7 @@ def send_message(phone_number, message):
         print("Error sending message to {}".format(phone_number))
 
 
+@require_POST
 @csrf_exempt
 def twilio_webhook(request):
     logging.basicConfig(filename='example.log', encoding='utf-8', level=logging.DEBUG)
@@ -50,6 +51,7 @@ def twilio_webhook(request):
         return HttpResponse("Twilio webhook: GET received")
 
 
+@require_POST
 @csrf_exempt
 def cloudbeds_webhook(request):
     logging.basicConfig(filename='example.log', encoding='utf-8', level=logging.DEBUG)
