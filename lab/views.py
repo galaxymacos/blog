@@ -71,7 +71,7 @@ def cloudbeds_webhook(request):
 if DEBUG:
     REDIRECT_URI = "https://127.0.0.1:8000/cloudbeds/oauth2/callback"
 else:
-    REDIRECT_URI = "https://137.184.71.252/lab/oauth2/callback"
+    REDIRECT_URI = "https://xunruan.ca/lab/oauth2/callback"
 
 oauth_url = "https://hotels.cloudbeds.com/api/v1.1/oauth?" \
             f"client_id={CLOUDBEDS_CLIENT_ID}" \
