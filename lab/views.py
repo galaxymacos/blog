@@ -42,31 +42,31 @@ def send_message(phone_number, message):
 @require_POST
 @csrf_exempt
 def twilio_webhook(request):
-    logging.basicConfig(filename='example.log', encoding='utf-8', level=logging.DEBUG)
+    logging.basicConfig(filename='example.log', encoding='utf-8', level=logging.info)
     if request.method == 'POST':
-        logging.debug("Twilio webhook: POST received")
+        logging.info("Twilio webhook: POST received")
         return HttpResponse("Twilio webhook: POST received")
     else:
-        logging.debug("Twilio webhook: GET received")
+        logging.info("Twilio webhook: GET received")
         return HttpResponse("Twilio webhook: GET received")
 
 
 @require_POST
 @csrf_exempt
 def cloudbeds_webhook(request):
-    logging.basicConfig(filename='example.log', encoding='utf-8', level=logging.DEBUG)
+    logging.basicConfig(filename='example.log', encoding='utf-8', level=logging.info)
     if request.method == "POST":
         try:
-            logging.debug("Cloudbeds webhook: POST received")
+            logging.info("Cloudbeds webhook: POST received")
             # Get the JSON data from the request body
             data = json.loads(request.body)
-            logging.debug(f"New reservation with id: {data['reservationID']}")
+            logging.info(f"New reservation with id: {data['reservationID']}")
         except Exception as e:
-            logging.debug(e)
-            logging.debug("Error parsing JSON")
+            logging.info(e)
+            logging.info("Error parsing JSON")
         return HttpResponse("Cloudbeds webhook: POST received")
     else:
-        logging.debug("Cloudbeds webhook: GET received")
+        logging.info("Cloudbeds webhook: GET received")
         return HttpResponse("Cloudbeds webhook: GET received")
 
 
@@ -133,7 +133,7 @@ def refresh():
         with open(BASE_DIR / "config_data.json", "w") as f:
             json.dump(local_config_data, f)
         # send_message(MANAGER_PHONE_NUMBER, "Access token refreshed")
-        logging.debug("Access token refreshed at {}".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+        logging.info("Access token refreshed at {}".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
     except Exception as e:
         logging.warning(f"Error refreshing access token at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         send_message(MANAGER_PHONE_NUMBER, "Access token refresh failed, error:" + str(e))
@@ -345,23 +345,20 @@ def send_checkin_procedure():
 
         for guest in guests_info:
             if guest[1] is None:
-                if DEBUG:
-                    print("Invalid phone number for guest:", guest[0])
+                print("Invalid phone number for guest:", guest[0])
                 continue
 
             message = f"""
-    Bonjour {guest[0].split(" ")[0]},
-
-    -- Vous avez une réservation à l'Hôtel Cowansville pour aujourd'hui.
-
-    -- Veuillez vous enregistrer après 15h30. Nous avons un personnel limité pour nettoyer les chambres, donc tout enregistrement anticipé avant 15h00 sera refusé.
-
-    -- Votre clé sera prête pour vous à la réception pour un enregistrement plus rapide si nous avons bien reçu votre paiement.
-                """
+Bonjour {guest[0].split(" ")[0]},
+-- Vous avez une réservation à l'Hôtel Cowansville pour aujourd'hui.
+-- Veuillez vous enregistrer après 15h30. Nous avons un personnel limité pour nettoyer les chambres, donc tout enregistrement anticipé avant 15h00 sera refusé.
+-- Votre clé sera prête pour vous à la réception pour un enregistrement plus rapide si nous avons bien reçu votre paiement.
+"""
             send_message(guest[1], message)
-        logging.debug("Checkin procedure sent at" + str(datetime.now()))
+            logging.info(f"{datetime.now()}: Checkin procedure sent to {guest[0]} at {guest[1]}")
     except Exception as e:
         logging.error(f"Error sending checkin procedure: {e}")
+
 
 def send_review_request():
     with open(BASE_DIR / "config_data.json", "r") as f:
@@ -407,7 +404,7 @@ def send_review_request():
                 send_message(guest_phone, message)
         if DEBUG:
             print(f"Send review request to {len(datas)} guests")
-        logging.debug(f"Review request sent to guest successfully at {datetime.now()}")
+        logging.info(f"Review request sent to guest successfully at {datetime.now()}")
     except Exception as e:
         logging.error(f"Error sending review request: {e} at {datetime.now()}")
 
@@ -443,9 +440,9 @@ def send_checkout_procedure():
                 print(f"{guest_name} reserves on {source_name}")
             title = f"Bonjour {guest_name.split()[0]}\n"
             send_message(guest_phone, title + body_message)
-        logging.debug("Checkout procedure sent to guest successfully.")
+        logging.info("Checkout procedure sent to guest successfully.")
     except Exception as e:
-        logging.debug(f"Error when sending checkout procedure to guests: {str(e)} at {datetime.now()}")
+        logging.error(f"Error when sending checkout procedure to guests: {str(e)} at {datetime.now()}")
 
 
 def send_housekeeping_notice_to_guest():
@@ -484,9 +481,9 @@ def send_housekeeping_notice_to_guest():
             guest_phone = trim_phone(each_guest['guestPhone'])
             title_message = f"Bonjour {guest_name.split()[0]},\n"
             send_message(guest_phone, title_message + main_body_message)
-        logging.debug(f"Housekeeping notice sent to guest. Room: {room_number_to_clean} at {datetime.now()}")
+        logging.info(f"Housekeeping notice sent to guest. Room: {room_number_to_clean} at {datetime.now()}")
     except Exception as e:
-        logging.debug(f"Error when sending housekeeping notice to guests: {str(e)} at {datetime.now()}")
+        logging.error(f"Error when sending housekeeping notice to guests: {str(e)} at {datetime.now()}")
 
 
 def send_daily_summary():
@@ -509,9 +506,9 @@ def send_daily_summary():
         连住房数: {data['inHouse']}
         """
         send_message(MANAGER_PHONE_NUMBER, message)
-        logging.debug("Daily summary sent to manager successfully at {}".format(datetime.now()))
+        logging.info(f"{datetime.now()} Send daily summary to {MANAGER_PHONE_NUMBER}")
     except Exception as e:
-        logging.debug(f"Error when sending daily summary to manager: {str(e)} at {datetime.now()}")
+        logging.warning(f"{datetime.now()} Error when sending daily summary: {str(e)}")
 
 
 def trim_phone(phone):
@@ -531,7 +528,7 @@ def subscribe_to_webhook(request):
         #     "Content-Type": "application/x-www-form-urlencoded",
         # }
         # headers_cloudbeds = {
-            # "Authorization": f"Bearer {local_config_data['access_token']}",
+        # "Authorization": f"Bearer {local_config_data['access_token']}",
         # }
 
         headers_myblog = {
@@ -572,21 +569,24 @@ def subscribe_to_webhook(request):
 
     except Exception as e:
         print(e)
-        send_message("Subscribe to webhook with error:", str(e))
+        logging.error(f"{datetime.now()}: Error when subscribing to webhook: {str(e)}")
     return HttpResponse("Succeed")
 
 
 def list_webhooks(request):
-    with open(BASE_DIR / "config_data.json", "r") as f:
-        local_config_data = json.load(f)
-    headers = {
-        "Authorization": f"Bearer {local_config_data['access_token']}",
-    }
-    response = requests.get("https://hotels.cloudbeds.com/api/v1.1/getWebhooks", headers=headers)
-    if 'data' in response.json() and len(response.json()['data']) > 0:
-        for webhook in response.json()['data']:
-            print(f"The webhook is connected to: {webhook['subscriptionData']}")
-            send_message(MANAGER_PHONE_NUMBER, f"The webhook is connected to: {webhook['subscriptionData']}")
+    try:
+        with open(BASE_DIR / "config_data.json", "r") as f:
+            local_config_data = json.load(f)
+        headers = {
+            "Authorization": f"Bearer {local_config_data['access_token']}",
+        }
+        response = requests.get("https://hotels.cloudbeds.com/api/v1.1/getWebhooks", headers=headers)
+        if 'data' in response.json() and len(response.json()['data']) > 0:
+            for webhook in response.json()['data']:
+                print(f"The webhook is connected to: {webhook['subscriptionData']}")
+                send_message(MANAGER_PHONE_NUMBER, f"The webhook is connected to: {webhook['subscriptionData']}")
+    except Exception as e:
+        logging.error(f"{datetime.now()}: Error when listing webhooks - {str(e)}")
     return HttpResponse("Succeed")
 
 

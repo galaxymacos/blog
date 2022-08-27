@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 import json
+import logging
 import os
 from pathlib import Path
 
@@ -60,6 +61,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "lab",
+    "info",
 ]
 
 MIDDLEWARE = [
@@ -146,12 +148,16 @@ USE_I18N = True
 
 USE_TZ = False
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "static"
+
+# HTTP settings
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+SECURE_SSL_REDIRECT = True
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
@@ -166,3 +172,6 @@ else:
     with open(BASE_DIR / "config_data.json", "w") as write_file:
         json.dump(CONFIG_DATA, write_file)
 
+# Configure the default logging location, and logging level
+logging.basicConfig(filename=BASE_DIR / 'blog.log', encoding='utf-8', level=logging.INFO)
+logging.info("Logging initialized")
