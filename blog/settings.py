@@ -47,7 +47,7 @@ DEBUG = env('DEBUG')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 
-ALLOWED_HOSTS = ["137.184.71.252", "localhost", "127.0.0.1"]
+ALLOWED_HOSTS = ["xunruan.ca", "www.xunruan.ca", "137.184.71.252", "localhost", "127.0.0.1"]
 
 
 # Application definition

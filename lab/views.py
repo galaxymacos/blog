@@ -96,7 +96,7 @@ def cloudbeds_login_redirect(request):
     local_config_data['expires_in'] = (datetime.now() + timedelta(hours=1)).strftime("%Y-%m-%d %H:%M:%S")
     with open(BASE_DIR / "config_data.json", "w") as f:
         json.dump(local_config_data, f)
-    return redirect(reverse('management:index'))
+    return HttpResponse("Successful")
 
 
 def try_refresh(request):
