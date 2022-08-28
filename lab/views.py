@@ -49,7 +49,8 @@ def twilio_webhook(request):    # Get the post QueryDict from the request.
             phone = data['From']
             body = data['Body']
             logging.debug(f"{datetime.now()}: Received message from {phone} with body {body}")
-            message_chinese = translate(body, "zn")
+            # Send translation to YuRuan
+            message_chinese = translate(body, "ZH")
             send_message(MANAGER_PHONE_NUMBER, message_chinese)
             # message_english = translate(body, "en")
             # send_message(RECEPTIONIST_PHONE_NUMBER, message_english)
