@@ -45,7 +45,7 @@ def twilio_webhook(request):
     if request.method == 'POST':
         try:
             data = request.POST
-            print(data)
+            logging.debug(data)
             # phone = data['From']
             # body = data['Body']
             # logging.debug(f"{datetime.now()}: Received message from {phone} with body {body}")
