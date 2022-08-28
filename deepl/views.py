@@ -1,11 +1,13 @@
 import requests
 from django.http import JsonResponse
 
+from blog.settings import env
+
 
 # Create your views here.
 def index(request):
     params = {
-        'auth_key': '904de63a-2caf-e1a0-dce2-95562021f7cc:fx',
+        'auth_key': env("DEEPL_AUTH_KEY"),
         'text': 'Hello World!',
         'target_lang': 'FR',
     }
