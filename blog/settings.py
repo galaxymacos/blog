@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     "lab",
     "info",
     "deepl",
+    "sslserver",
 ]
 
 MIDDLEWARE = [
