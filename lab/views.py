@@ -42,10 +42,16 @@ def send_message(phone_number, message):
 @require_POST
 @csrf_exempt
 def twilio_webhook(request):
-    logging.basicConfig(filename='example.log', encoding='utf-8', level=logging.info)
     if request.method == 'POST':
-        logging.info("Twilio webhook: POST received")
-        return HttpResponse("Twilio webhook: POST received")
+        try:
+            data = json.loads(request.POST)
+            phone = data['From']
+            body = data['Body']
+            logging.debug(f"{datetime.now()}: Received message from {phone} with body {body}")
+            return HttpResponse("Twilio webhook: POST received")
+        except Exception as e:
+            logging.error(f"Error receiving twilio webhook: {e}")
+            return JsonResponse({"Success": False, "Error": str(e)})
     else:
         logging.info("Twilio webhook: GET received")
         return HttpResponse("Twilio webhook: GET received")
@@ -54,20 +60,33 @@ def twilio_webhook(request):
 @require_POST
 @csrf_exempt
 def cloudbeds_webhook(request):
-    logging.basicConfig(filename='example.log', encoding='utf-8', level=logging.info)
     if request.method == "POST":
         try:
             logging.info("Cloudbeds webhook: POST received")
             # Get the JSON data from the request body
             data = json.loads(request.body)
-            logging.info(f"New reservation with id: {data['reservationID']}")
+            reservation_id = data['reservation_id']
+            response = requests.get("https://hotels.cloudbeds.com/api/v1.1/getGuest",
+                                    headers={"Authorization": f"Bearer {CONFIG_DATA['access_token']}",},
+                                    params={"reservationID": reservation_id})
+            cell_phone = trim_phone(response.json()["data"]["cellPhone"])
+            phone = trim_phone(response.json()["data"]["phone"])
+            cell_phone = cell_phone if cell_phone else phone
+            guest_firstname = response.json()["data"]["firstName"]
+            guest_lastname = response.json()["data"]["lastName"]
+            send_message(cell_phone,
+                         f"""
+ Bonjour, {guest_firstname}!
+ Votre réservation a été confirmée.
+ Si vous avez des questions, veuillez nous envoyer un courriel à info@cowansvillehotel.com.
+                         """)
+            logging.debug(f"{datetime.now()}Sent reservation confirmation message to {guest_firstname} {guest_lastname} at {cell_phone}")
+
         except Exception as e:
-            logging.info(e)
-            logging.info("Error parsing JSON")
+            logging.error(f"{datetime.now()} - Error in cloudbeds webhook: " + str(e))
         return HttpResponse("Cloudbeds webhook: POST received")
     else:
-        logging.info("Cloudbeds webhook: GET received")
-        return HttpResponse("Cloudbeds webhook: GET received")
+        logging.error(f"{datetime.now()} - Cloudbeds webhook: GET received")
 
 
 if DEBUG:
@@ -159,70 +178,6 @@ def exchange_code(request, code):
     refresh_token = credentials['refresh_token']
 
     return access_token, refresh_token
-
-
-def access_token_check(request):
-    with open(BASE_DIR / "config_data.json", "r") as f:
-        local_config_data = json.load(f)
-    try:
-        headers = {
-            "Authorization": f"Bearer {local_config_data['access_token']}",
-        }
-        response = requests.post(
-            "https://hotels.cloudbeds.com/api/v1.1/access_token_check", headers=headers)
-        data = response.json()
-    except:
-        data = {'success': False}
-    return JsonResponse(data)
-    # if data['success'] == "False":
-    #     return HttpResponse('Access token is invalid')
-    # else:
-    #     return HttpResponse('Access token is valid')
-
-
-def grant_access_if_expired(request):
-    # Check if access token is expired, if so, refresh it
-    access_code_active_state = access_token_check(request)
-    if access_code_active_state['success'] == "False":
-        try_refresh(request)
-
-
-def get_userinfo(request):
-    access_token = request.COOKIES.get('access_token')
-    response = requests.get("https://hotels.cloudbeds.com/api/v1.1/userinfo",
-                            headers={'Authorization': f'Bearer {access_token}'})
-    userinfo = response.json()
-    return JsonResponse(userinfo)
-
-
-def get_guest_in_house(request):
-    with open(BASE_DIR / "config_data.json", "r") as f:
-        local_config_data = json.load(f)
-    headers = {
-        "Authorization": f"Bearer {local_config_data['access_token']}",
-    }
-    params = {
-        "status": "in_house",
-    }
-    response = requests.get("https://hotels.cloudbeds.com/api/v1.1/getGuestsByStatus", params=params, headers=headers)
-    data = response.json()
-    names = [person["guestName"] for person in data['data']]
-    return JsonResponse(data)
-
-
-def get_housekeeping_status(request):
-    params = {
-        "roomCondition": "dirty",
-    }
-    headers = {
-        "Authorization": f"Bearer {CONFIG_DATA['access_token']}",
-    }
-    response = requests.get("https://hotels.cloudbeds.com/api/v1.1/getHousekeepingStatus", params=params,
-                            headers=headers)
-    data = response.json()
-    rooms = [room for room in data['data'] if room['roomOccupied'] == False]
-    room_numbers = [room['roomName'] for room in rooms]
-    return JsonResponse(data)
 
 
 def get_checkout_rooms_tomorrow():
@@ -523,50 +478,19 @@ def subscribe_to_webhook(request):
     with open(BASE_DIR / "config_data.json", "r") as f:
         local_config_data = json.load(f)
     try:
-        # headers_webhook_site = {
-        #     "Authorization": f"Bearer {local_config_data['access_token']}",
-        #     "Content-Type": "application/x-www-form-urlencoded",
-        # }
-        # headers_cloudbeds = {
-        # "Authorization": f"Bearer {local_config_data['access_token']}",
-        # }
-
         headers_myblog = {
             "Authorization": f"Bearer {local_config_data['access_token']}",
         }
-        # Get guests and check-in in the past, and check-out in the future. (means they are in-house)
-        # endpoint_url_webhook_site = "https://hotelcowansville.ca/lab/cloudbeds-webhook/"
-        # endpoint_url_cloudbeds = "https://hotelcowansville.ca/cloudbeds/webhook-reservation-created",
-        endpoint_url_myblog = "http://137.184.71.252/lab/cloudbeds-webhook/",
-
-        # data_webhook_site = {
-        #     "endpointUrl": endpoint_url_webhook_site,
-        #     "object": "reservation",
-        #     "action": "created"
-        # }
-
-        # data_cloudbeds = {
-        #     "endpointUrl": endpoint_url_cloudbeds,
-        #     "object": "reservation",
-        #     "action": "created"
-        # }
 
         data_myblog = {
-            "endpointUrl": endpoint_url_myblog,
+            "endpointUrl": "https://xunruan.ca/lab/cloudbeds-webhook/",
             "object": "reservation",
             "action": "created"
         }
         response_myblog = requests.post("https://hotels.cloudbeds.com/api/v1.1/postWebhook", headers=headers_myblog,
                                         data=data_myblog)
-        # response_cloudbeds = requests.post("https://hotels.cloudbeds.com/api/v1.1/postWebhook",
-        #                                    headers=headers_cloudbeds, data=data_cloudbeds)
-        # response_webhook_site = requests.post("https://hotels.cloudbeds.com/api/v1.1/postWebhook",
-        #                                       headers=headers_webhook_site, data=data_webhook_site)
 
-        send_message(MANAGER_PHONE_NUMBER, f"Subscribed to myblog: {response_myblog.status_code}")
-        # send_message(MANAGER_PHONE_NUMBER, f"Subscribe to cloudbeds: {response_cloudbeds.status_code}")
-        # send_message(MANAGER_PHONE_NUMBER, f"Subscribe to webhook.site: {response_webhook_site.status_code}")
-
+        logging.debug(f"{datetime.now()} Subscribed to myblog: {response_myblog.status_code}")
     except Exception as e:
         print(e)
         logging.error(f"{datetime.now()}: Error when subscribing to webhook: {str(e)}")
