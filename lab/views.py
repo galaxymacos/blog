@@ -80,12 +80,11 @@ def cloudbeds_webhook(request):
             cell_phone = cell_phone if cell_phone else phone
             guest_firstname = response.json()["data"]["firstName"]
             guest_lastname = response.json()["data"]["lastName"]
-            send_message(cell_phone,
-                         f"""
- Bonjour, {guest_firstname}!
- Votre réservation a été confirmée.
- Si vous avez des questions, veuillez nous envoyer un courriel à info@cowansvillehotel.com.
-                         """)
+            if data['startDate'] == datetime.now().strftime("%Y-%m-%d") and datetime.now().hour >= 8:
+                message = f"Bonjour {guest_firstname}, vous avez une réservation à l'Hôtel Cowansville pour aujourd'hui. Veuillez vous enregistrer après 15h30. Nous avons un personnel limité pour nettoyer les chambres, donc tout enregistrement anticipé avant 15h00 sera refusé.Votre clé sera prête pour vous à la réception pour un enregistrement plus rapide si nous avons bien reçu votre paiement."
+            else:
+                message = f"Bonjour, {guest_firstname}, votre réservation a été confirmée au {data['startDate']}. Si vous avez des questions, veuillez nous envoyer un courriel à info@cowansvillehotel.com."
+            send_message(cell_phone, message)
             logging.debug(f"{datetime.now()}Sent reservation confirmation message to {guest_firstname} {guest_lastname} at {cell_phone}")
 
         except Exception as e:
