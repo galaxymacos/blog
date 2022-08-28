@@ -13,12 +13,23 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+from django.conf import settings
+from django.conf.urls.i18n import i18n_patterns
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path
+from django.utils.translation import gettext_lazy as _
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
+    path(_("admin/"), admin.site.urls),
     path("lab/", include("lab.urls")),
-    path("", include("info.urls")),
+
     path("deepl/", include("deepl.urls")),
 ]
+
+urlpatterns += i18n_patterns(
+    path("", include("info.urls", namespace="info"))
+)
+
+# Not used
+if 'rosetta' in settings.INSTALLED_APPS:
+    urlpatterns += [re_path(r'^rosetta/', include('rosetta.urls'))]

@@ -13,6 +13,7 @@ import json
 import logging
 import os
 from pathlib import Path
+from django.utils.translation import gettext_lazy as _
 
 import environ
 
@@ -42,14 +43,12 @@ MANAGER_PHONE_NUMBER = env('MANAGER_PHONE_NUMBER')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env('DEBUG')
 
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
 # SECURITY WARNING: don't run with debug turned on in production!
 
 ALLOWED_HOSTS = ["xunruan.ca", "www.xunruan.ca", "137.184.71.252", "localhost", "127.0.0.1"]
-
 
 # Application definition
 
@@ -68,8 +67,8 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",  # detect user language
-    "django.middleware.locale.LocaleMiddleware",    # Process url
-    "django.middleware.common.CommonMiddleware",    # Generate url
+    "django.middleware.locale.LocaleMiddleware",  # Process url
+    "django.middleware.common.CommonMiddleware",  # Generate url
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
@@ -96,7 +95,6 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "blog.wsgi.application"
-
 
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
@@ -138,7 +136,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/4.1/topics/i18n/
 
@@ -155,6 +152,15 @@ USE_TZ = False
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "static"
+
+LANGUAGES = (
+    ('en', _('English')),
+    ('fr', _('French')),
+)
+
+LOCALE_PATHS = (
+    BASE_DIR / 'locale',
+)
 
 # HTTP settings
 if not DEBUG:

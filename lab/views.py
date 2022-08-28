@@ -252,7 +252,7 @@ def get_checkout_rooms_tomorrow():
             for k, v in room.items():
                 for guest_room in v['rooms']:
                     checkout_room_ids.append(guest_room['roomName'])
-            return checkout_room_ids
+        return checkout_room_ids
     except Exception as e:
         send_message(MANAGER_PHONE_NUMBER, "Error getting checkout rooms: " + str(e))
         return []
