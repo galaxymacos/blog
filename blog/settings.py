@@ -62,12 +62,14 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "lab",
     "info",
+    "deepl",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    "django.contrib.sessions.middleware.SessionMiddleware",
-    "django.middleware.common.CommonMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",  # detect user language
+    "django.middleware.locale.LocaleMiddleware",    # Process url
+    "django.middleware.common.CommonMiddleware",    # Generate url
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
@@ -155,9 +157,10 @@ STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "static"
 
 # HTTP settings
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
-SECURE_SSL_REDIRECT = True
+if not DEBUG:
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_SSL_REDIRECT = True
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
@@ -174,4 +177,3 @@ else:
 
 # Configure the default logging location, and logging level
 logging.basicConfig(filename=BASE_DIR / 'blog.log', encoding='utf-8', level=logging.INFO)
-logging.info("Logging initialized")

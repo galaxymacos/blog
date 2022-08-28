@@ -20,4 +20,5 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("lab/", include("lab.urls")),
     path("", include("info.urls")),
+    path("deepl/", include("deepl.urls")),
 ]
