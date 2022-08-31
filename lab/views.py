@@ -71,7 +71,7 @@ def on_reservation_created(request):
             logging.info("Cloudbeds webhook: POST received")
             # Get the JSON data from the request body
             data = json.loads(request.body)
-            reservation_id = data['reservation_id']
+            reservation_id = data['reservationId']
             response = requests.get("https://hotels.cloudbeds.com/api/v1.1/getGuest",
                                     headers={"Authorization": f"Bearer {CONFIG_DATA['access_token']}", },
                                     params={"reservationID": reservation_id})
@@ -101,7 +101,7 @@ def on_reservation_created(request):
 def on_reservation_status_changed(request):
     try:
         data = json.loads(request.body)
-        reservation_id = data['reservation_id']
+        reservation_id = data['reservationId']
         response = requests.get("https://hotels.cloudbeds.com/api/v1.1/getGuest",
                                 headers={"Authorization": f"Bearer {CONFIG_DATA['access_token']}", },
                                 params={"reservationID": reservation_id})
@@ -154,27 +154,38 @@ oauth_url = "https://hotels.cloudbeds.com/api/v1.1/oauth?" \
             "response_type=code"
 
 
+@require_POST
+@csrf_exempt
 def on_reservation_dates_changed(request):
     try:
         data = json.loads(request.body)
-        logging.debug(f"Your reservation dates have been changed. New Date: check-in on {data['startDate']}; check-out on {data['stateDate']}")
+        reservation_id = data['reservationId']
+        logging.debug(
+            f"Your reservation dates have been changed. New Date: check-in on {data['startDate']}; check-out on {data['stateDate']}")
         send_message(MANAGER_PHONE_NUMBER, "Reservation dates changed")
     except Exception as e:
         logging.error(f"{datetime.now()} - Error in reservation dates change webhook: " + str(e))
 
 
+@require_POST
+@csrf_exempt
 def on_reservation_accommodation_type_changed(request):
     try:
         data = json.loads(request.body)
-        logging.debug(f"Your reservation accommodation type has been changed. New accommodation type: {data['roomTypeID']}")
+        reservation_id = data['reservationID']
+        logging.debug(
+            f"Your reservation accommodation type has been changed. New accommodation type: {data['roomTypeID']}")
         send_message(MANAGER_PHONE_NUMBER, "Reservation accommodation type changed")
     except Exception as e:
         logging.error(f"{datetime.now()} - Error in reservation accommodation type change webhook: " + str(e))
 
 
+@require_POST
+@csrf_exempt
 def on_reservation_accommodation_changed(request):
     try:
         data = json.loads(request.body)
+        reservation_id = data['reservationId']
         logging.debug(f"Your reservation accommodation has been changed. New accommodation: {data['roomID']}")
         send_message(MANAGER_PHONE_NUMBER, "Reservation accommodation changed")
     except Exception as e:
@@ -298,10 +309,10 @@ def subscribe_to_webhook(request):
         ]
         for webhook_data in webhooks_data:
             response = requests.post(
-                    "https://hotels.cloudbeds.com/api/v1.1/postWebhook",
-                    headers={"Authorization": f"Bearer {CONFIG_DATA['access_token']}"},
-                    data=webhook_data
-                )
+                "https://hotels.cloudbeds.com/api/v1.1/postWebhook",
+                headers={"Authorization": f"Bearer {CONFIG_DATA['access_token']}"},
+                data=webhook_data
+            )
 
             if response.status_code != 200:
                 logging.warning(f"Error subscribing to webhook at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
