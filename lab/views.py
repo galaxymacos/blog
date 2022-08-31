@@ -142,6 +142,7 @@ Your invoice can be downloaded on hotelcowansville.ca/invoice/{reservation_id} w
         return JsonResponse({"Success": False, "Error": str(e)})
     return JsonResponse({"Success": True})
 
+
 if DEBUG:
     REDIRECT_URI = "https://127.0.0.1:8000/lab/oauth2/callback"
 else:
@@ -160,15 +161,24 @@ oauth_url = "https://hotels.cloudbeds.com/api/v1.1/oauth?" \
 def on_reservation_dates_changed(request):
     try:
         data = json.loads(request.body)
-        logging.debug(data)
         reservation_id = data['reservationID']
-        # logging.debug(
-        #     f"Your reservation dates have been changed. New Date: check-in on {data['startDate']}; check-out on {data['endDate']}")
-        send_message(MANAGER_PHONE_NUMBER, "Reservation dates changed")
+        response = requests.get("https://hotels.cloudbeds.com/api/v1.1/getGuest",
+                                headers={"Authorization": f"Bearer {CONFIG_DATA['access_token']}", },
+                                params={"reservationID": reservation_id})
+        guest = response.json()["data"]
+        cell_phone = trim_phone(guest["cellPhone"])
+        logging.debug(
+            f"")
+        send_message(
+            MANAGER_PHONE_NUMBER,
+            f"""
+The date of your reservation {reservation_id} has been changed.
+ New Date: check-in: {data['startDate']}; check-out: {data['endDate']}""")
     except Exception as e:
         logging.error(f"{datetime.now()} - Error in reservation dates change webhook: " + str(e))
         return JsonResponse({"Success": False, "Error": str(e)})
     return JsonResponse({"Success": True})
+
 
 @require_POST
 @csrf_exempt
@@ -178,12 +188,13 @@ def on_reservation_accommodation_type_changed(request):
         logging.debug(data)
         reservation_id = data['reservationID']
         logging.debug(
-            f"Your reservation accommodation type has been changed. New accommodation type: {data['roomTypeID']}")
+            f"Your reservation accommodation type has been changed to {data['roomTypeID']}")
         send_message(MANAGER_PHONE_NUMBER, "Reservation accommodation type changed")
     except Exception as e:
         logging.error(f"{datetime.now()} - Error in reservation accommodation type change webhook: " + str(e))
         return JsonResponse({"Success": False, "Error": str(e)})
     return JsonResponse({"Success": True})
+
 
 @require_POST
 @csrf_exempt
@@ -198,6 +209,7 @@ def on_reservation_accommodation_changed(request):
         logging.error(f"{datetime.now()} - Error in reservation accommodation change webhook: " + str(e))
         return JsonResponse({"Success": False, "Error": str(e)})
     return JsonResponse({"Success": True})
+
 
 def cloudbeds_login(request):
     # send user to cloudbeds login page (oauth), cloudbeds is responsible for redirecting user to callback page
