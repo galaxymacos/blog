@@ -67,11 +67,11 @@ def on_sms_receive(request):  # Get the post QueryDict from the request.
 @csrf_exempt
 def on_reservation_created(request):
     try:
-        logging.info("Cloudbeds webhook: POST received")
+        logging.debug("Cloudbeds webhook: POST received")
         # Get the JSON data from the request body
         data = json.loads(request.body)
         logging.debug(data)
-        reservation_id = data['reservationId']
+        reservation_id = data['reservationID']
         response = requests.get("https://hotels.cloudbeds.com/api/v1.1/getGuest",
                                 headers={"Authorization": f"Bearer {CONFIG_DATA['access_token']}", },
                                 params={"reservationID": reservation_id})
@@ -101,7 +101,7 @@ def on_reservation_status_changed(request):
     try:
         data = json.loads(request.body)
         logging.debug(data)
-        reservation_id = data['reservationId']
+        reservation_id = data['reservationID']
         response = requests.get("https://hotels.cloudbeds.com/api/v1.1/getGuest",
                                 headers={"Authorization": f"Bearer {CONFIG_DATA['access_token']}", },
                                 params={"reservationID": reservation_id})
@@ -161,7 +161,7 @@ def on_reservation_dates_changed(request):
     try:
         data = json.loads(request.body)
         logging.debug(data)
-        reservation_id = data['reservationId']
+        reservation_id = data['reservationID']
         # logging.debug(
         #     f"Your reservation dates have been changed. New Date: check-in on {data['startDate']}; check-out on {data['endDate']}")
         send_message(MANAGER_PHONE_NUMBER, "Reservation dates changed")
@@ -191,7 +191,7 @@ def on_reservation_accommodation_changed(request):
     try:
         data = json.loads(request.body)
         logging.debug(data)
-        reservation_id = data['reservationId']
+        reservation_id = data['reservationID']
         logging.debug(f"Your reservation accommodation has been changed. New accommodation: {data['roomID']}")
         send_message(MANAGER_PHONE_NUMBER, "Reservation accommodation changed")
     except Exception as e:
