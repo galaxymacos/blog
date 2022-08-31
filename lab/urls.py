@@ -8,7 +8,7 @@ urlpatterns = [
     path('on-reservation-created/', on_reservation_created, name='on_reservation_created'),
     path('on-reservation-status-changed/', on_reservation_status_changed, name='on_reservation_status_changed'),
     path('on-reservation-dates-changed/', on_reservation_dates_changed, name='on_reservation_dates_changed'),
-    path('on-reservation-accommodation-type-changed', on_reservation_accommodation_type_changed, name='on_reservation_accommodation_type_changed'),
+
     path('on-reservation-accommodation-changed/', on_reservation_accommodation_changed, name='on_reservation_accommodation_changed'),
 
 
