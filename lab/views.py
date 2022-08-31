@@ -42,7 +42,7 @@ def send_message(phone_number, message):
 
 @require_POST
 @csrf_exempt
-def twilio_webhook(request):  # Get the post QueryDict from the request.
+def on_sms_receive(request):  # Get the post QueryDict from the request.
     if request.method == 'POST':
         try:
             data = request.POST
@@ -65,7 +65,7 @@ def twilio_webhook(request):  # Get the post QueryDict from the request.
 
 @require_POST
 @csrf_exempt
-def cloudbeds_webhook(request):
+def on_reservation_created(request):
     if request.method == "POST":
         try:
             logging.info("Cloudbeds webhook: POST received")
@@ -81,10 +81,11 @@ def cloudbeds_webhook(request):
             guest_firstname = response.json()["data"]["firstName"]
             guest_lastname = response.json()["data"]["lastName"]
             if data['startDate'] == datetime.now().strftime("%Y-%m-%d") and datetime.now().hour >= 8:
-                message = f"Bonjour {guest_firstname}, vous avez une réservation à l'Hôtel Cowansville pour aujourd'hui. Veuillez vous enregistrer après 15h30. Nous avons un personnel limité pour nettoyer les chambres, donc tout enregistrement anticipé avant 15h00 sera refusé.Votre clé sera prête pour vous à la réception pour un enregistrement plus rapide si nous avons bien reçu votre paiement."
+                message = f"Bonjour {guest_firstname}, vous avez une réservation à l'Hôtel Cowansville pour aujourd'hui. Veuillez vous enregistrer après 15h30. Nous avons un personnel limité pour nettoyer les chambres, donc tout enregistrement anticipé avant 15h00 sera refusé.Votre clé sera prête pour vous à la réception pour un enregistrement plus rapide si nous avons bien reçu votre paiement. Merci!"
             else:
-                message = f"Bonjour, {guest_firstname}, votre réservation a été confirmée au {data['startDate']}. Si vous avez des questions, veuillez nous envoyer un courriel à info@cowansvillehotel.com."
-            send_message(cell_phone, message)
+                message = f"Bonjour, {guest_firstname}, votre réservation a été confirmée au {data['startDate']}. Si vous avez des questions, veuillez nous envoyer un courriel à info@cowansvillehotel.com. If you have an emergency, please refer to our " \
+                          f"website for our cancellation policy. We look forward to welcoming you to our hotel."
+            send_message(MANAGER_PHONE_NUMBER, message)
             logging.debug(
                 f"{datetime.now()}Sent reservation confirmation message to {guest_firstname} {guest_lastname} at {cell_phone}")
 
@@ -97,30 +98,45 @@ def cloudbeds_webhook(request):
 
 @require_POST
 @csrf_exempt
-def reservation_status_change_webhook(request):
+def on_reservation_status_changed(request):
     try:
         data = json.loads(request.body)
         reservation_id = data['reservation_id']
-        if data['status'] == "no_show" or data['status'] == "cancelled":
-            response = requests.get("https://hotels.cloudbeds.com/api/v1.1/getGuest",
-                                    headers={"Authorization": f"Bearer {CONFIG_DATA['access_token']}", },
-                                    params={"reservationID": reservation_id})
-            cell_phone = trim_phone(response.json()["data"]["cellPhone"])
-            if data['status'] == "no_show":
-                message = f"No_show"
-                logging.debug(f"{datetime.now()} - No show for {response.json()['data']['firstName']} {response.json()['data']['lastName']} at {cell_phone}")
-            elif data['status'] == "canceled":
-                fee = -1
-                if datetime.strptime(data["startDate"], "%Y-%m-%d") > datetime.now() + timedelta(days=3):
-                    fee = 20
-                    pass
-                elif datetime.strptime(data["startDate"], "%Y-%m-%d") > datetime.now() + timedelta(days=1):
-                    fee = 50
-                elif datetime.strptime(data["startDate"], "%Y-%m-%d") > datetime.now():
-                    fee = 90
+        response = requests.get("https://hotels.cloudbeds.com/api/v1.1/getGuest",
+                                headers={"Authorization": f"Bearer {CONFIG_DATA['access_token']}", },
+                                params={"reservationID": reservation_id})
+        guest = response.json()["data"]
+        cell_phone = trim_phone(guest["cellPhone"])
+        if data['status'] == "no_show":
 
-                message = f"Hi, we have cancelled your reservation. According to the cancellation policy, you will be charged a fee of {fee}% as cancellation fee"
-                logging.debug(f"{datetime.now()} - Cancelled reservation {reservation_id} with fee {fee}")
+            send_message(
+                MANAGER_PHONE_NUMBER,
+                f"""
+Hi, {guest['firstName']} {guest['lastName']}
+
+A no-show record under your reservation {reservation_id} is recorded in our system. Please be aware that no refund will be made for any no-show reservation since we hold the room for you.
+ 
+Have a nice day!                 
+                 """)
+        elif data['status'] == "cancelled":
+            send_message(
+                MANAGER_PHONE_NUMBER,
+                f"""
+Hi, {guest['firstName']} {guest['lastName']}
+
+Your reservation {reservation_id} is cancelled. Cancellation fee may be applied according to our cancellation policy. Please refer our website at hotelcowansville.ca for more information. 
+ 
+Have a nice day!                 
+                 """)
+        elif data['status'] == "checked_in":
+            send_message(
+                MANAGER_PHONE_NUMBER,
+                f"""
+Hi {guest['firstName']} {guest['lastName']},
+Your invoice can be downloaded on hotelcowansville.ca/invoice/{reservation_id} when it reaches your check-out date.
+                """
+            )
+
     except Exception as e:
         logging.error(f"{datetime.now()} - Error in reservation status change webhook: " + str(e))
 
@@ -136,6 +152,33 @@ oauth_url = "https://hotels.cloudbeds.com/api/v1.1/oauth?" \
             f"redirect_uri={REDIRECT_URI}" \
             "&" \
             "response_type=code"
+
+
+def on_reservation_dates_changed(request):
+    try:
+        data = json.loads(request.body)
+        logging.debug(f"Your reservation dates have been changed. New Date: check-in on {data['startDate']}; check-out on {data['stateDate']}")
+        send_message(MANAGER_PHONE_NUMBER, "Reservation dates changed")
+    except Exception as e:
+        logging.error(f"{datetime.now()} - Error in reservation dates change webhook: " + str(e))
+
+
+def on_reservation_accommodation_type_changed(request):
+    try:
+        data = json.loads(request.body)
+        logging.debug(f"Your reservation accommodation type has been changed. New accommodation type: {data['roomTypeID']}")
+        send_message(MANAGER_PHONE_NUMBER, "Reservation accommodation type changed")
+    except Exception as e:
+        logging.error(f"{datetime.now()} - Error in reservation accommodation type change webhook: " + str(e))
+
+
+def on_reservation_accommodation_changed(request):
+    try:
+        data = json.loads(request.body)
+        logging.debug(f"Your reservation accommodation has been changed. New accommodation: {data['roomID']}")
+        send_message(MANAGER_PHONE_NUMBER, "Reservation accommodation changed")
+    except Exception as e:
+        logging.error(f"{datetime.now()} - Error in reservation accommodation change webhook: " + str(e))
 
 
 def cloudbeds_login(request):
@@ -226,28 +269,46 @@ def trim_phone(phone):
 # Webhook
 def subscribe_to_webhook(request):
     try:
-        response_reservation_created_webhook = requests.post(
-            "https://hotels.cloudbeds.com/api/v1.1/postWebhook",
-            headers={"Authorization": f"Bearer {CONFIG_DATA['access_token']}"},
-            data={
-                "endpointUrl": "https://xunruan.ca/lab/cloudbeds-webhook/",
+        webhooks_data = [
+            {
+                "endpointUrl": "https://xunruan.ca/lab/on-reservation-created/",
                 "object": "reservation",
                 "action": "created"
-            }
-        )
-        response_reservation_status_changed_webhook = requests.post(
-            "https://hotels.cloudbeds.com/api/v1.1/postWebhook",
-            headers={"Authorization": f"Bearer {CONFIG_DATA['access_token']}"},
-            data={
-                "endpointUrl": "https://xunruan.ca/lab/reservation_status_change_webhook/",
+            },
+            {
+                "endpointUrl": "https://xunruan.ca/lab/on-reservation-status-changed/",
                 "object": "reservation",
                 "action": "status_changed"
+            },
+            {
+                "endpointUrl": "https://xunruan.ca/lab/on-reservation-accommodation-type-changed/",
+                "object": "reservation",
+                "action": "accommodation_type_changed"
+            },
+            {
+                "endpointUrl": "https://xunruan.ca/lab/on-reservation-dates-changed/",
+                "object": "reservation",
+                "action": "dates_changed"
+            },
+            {
+                "endpointUrl": "https://xunruan.ca/lab/on-reservation-accommodation-changed/",
+                "object": "reservation",
+                "action": "accommodation_changed"
             }
-        )
-        if response_reservation_created_webhook.status_code != 200 or response_reservation_status_changed_webhook.status_code != 200:
-            logging.error(f"RX - Webhook subscription unsuccessful")
-            return HttpResponse("Successful")
-        logging.debug(f"RX - Webhook subscription successful")
+        ]
+        for webhook_data in webhooks_data:
+            response = requests.post(
+                    "https://hotels.cloudbeds.com/api/v1.1/postWebhook",
+                    headers={"Authorization": f"Bearer {CONFIG_DATA['access_token']}"},
+                    data=webhook_data
+                )
+
+            if response.status_code != 200:
+                logging.warning(f"Error subscribing to webhook at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+                send_message(MANAGER_PHONE_NUMBER, "Error subscribing to webhook")
+                return HttpResponse("Error subscribing to webhook")
+
+        logging.debug(f"xun - {len(webhooks_data)} Webhook subscription successful")
     except Exception as e:
         print(e)
         logging.error(f"{datetime.now()}: Error when subscribing to webhook: {str(e)}")
@@ -255,11 +316,10 @@ def subscribe_to_webhook(request):
 
 
 def list_webhooks(request):
+    print("list webhooks")
     try:
-        with open(BASE_DIR / "config_data.json", "r") as f:
-            local_config_data = json.load(f)
         headers = {
-            "Authorization": f"Bearer {local_config_data['access_token']}",
+            "Authorization": f"Bearer {CONFIG_DATA['access_token']}",
         }
         response = requests.get("https://hotels.cloudbeds.com/api/v1.1/getWebhooks", headers=headers)
         if 'data' in response.json() and len(response.json()['data']) > 0:
@@ -272,10 +332,9 @@ def list_webhooks(request):
 
 
 def delete_webhooks(request):
-    with open(BASE_DIR / "config_data.json", "r") as f:
-        local_config_data = json.load(f)
+    print("delete")
     headers = {
-        "Authorization": f"Bearer {local_config_data['access_token']}",
+        "Authorization": f"Bearer {CONFIG_DATA['access_token']}",
     }
     response = requests.get("https://hotels.cloudbeds.com/api/v1.1/getWebhooks", headers=headers)
     if 'data' in response.json() and len(response.json()['data']) > 0:

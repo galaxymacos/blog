@@ -3,9 +3,15 @@ from django.urls import path
 from lab.views import *
 app_name = 'lab'
 urlpatterns = [
-    path('twilio-webhook/', twilio_webhook, name='twilio_webhook'),
-    path('cloudbeds-webhook/', cloudbeds_webhook, name='cloudbeds_webhook'),
-    path('reservation_status_change_webhook/', reservation_status_change_webhook, name='reservation_status_change_webhook'),
+    # Webhooks
+    path('twilio-webhook/', on_sms_receive, name='twilio_webhook'),
+    path('on-reservation-created/', on_reservation_created, name='on_reservation_created'),
+    path('on-reservation-status-changed/', on_reservation_status_changed, name='on_reservation_status_changed'),
+    path('on-reservation-dates-changed/', on_reservation_dates_changed, name='on_reservation_dates_changed'),
+    path('on-reservation-accommodation_type_changed', on_reservation_accommodation_type_changed, name='on_reservation_accommodation_type_changed'),
+    path('on-reservation-accommodation_changed/', on_reservation_accommodation_changed, name='on_reservation_accommodation_changed'),
+
+
     path('oauth2/callback/', cloudbeds_login_redirect, name='oauth_login_redirect'),
     path('login/', cloudbeds_login, name='oauth_login'),
     path('refresh/', try_refresh, name='oauth_refresh'),
