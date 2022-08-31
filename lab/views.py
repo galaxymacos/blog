@@ -191,8 +191,8 @@ def on_reservation_accommodation_type_changed(request):
         reservation_id = data['reservationId']
         room_type_id = data['roomTypeId']
         room_type_name = get_room_type_name(room_type_id)
-        logging.debug(f"Your reservation accommodation type has been changed to {room_type_name}")
-        send_message(MANAGER_PHONE_NUMBER, f"Your reservation accommodation type has been changed to {room_type_name}")
+        logging.debug(f"Your reservation room type has been changed to {room_type_name}")
+        send_message(MANAGER_PHONE_NUMBER, f"Your reservation room type has been changed to {room_type_name}")
     except Exception as e:
         logging.error(f"{datetime.now()} - Error in reservation accommodation type change webhook: " + str(e))
         return JsonResponse({"Success": False, "Error": str(e)})
@@ -209,8 +209,8 @@ def on_reservation_accommodation_changed(request):
         logging.debug(data)
         reservation_id = data['reservationId']
         room_name = get_room_name(data['roomId'])
-        logging.debug(f"Your reservation accommodation has been changed. New accommodation: {room_name}")
-        send_message(MANAGER_PHONE_NUMBER, f"Your reservation accommodation has been changed. New accommodation: {room_name}")
+        logging.debug(f"Your assigned room has been changed. New room number: {room_name}")
+        send_message(MANAGER_PHONE_NUMBER, f"Your assigned room has been changed. New room number: {room_name}")
     except Exception as e:
         logging.error(f"{datetime.now()} - Error in reservation accommodation change webhook: " + str(e))
         return JsonResponse({"Success": False, "Error": str(e)})
