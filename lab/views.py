@@ -76,9 +76,7 @@ def on_reservation_created(request):
         response = requests.get("https://hotels.cloudbeds.com/api/v1.1/getGuest",
                                 headers={"Authorization": f"Bearer {CONFIG_DATA['access_token']}", },
                                 params={"reservationID": reservation_id})
-        cell_phone = trim_phone(response.json()["data"]["cellPhone"])
-        phone = trim_phone(response.json()["data"]["phone"])
-        cell_phone = cell_phone if cell_phone else phone
+        guest_phone = trim_phone(response.json()["data"]["phone"])
         guest_firstname = response.json()["data"]["firstName"]
         guest_lastname = response.json()["data"]["lastName"]
         if data['startDate'] == datetime.now().strftime("%Y-%m-%d") and datetime.now().hour >= 8:
@@ -86,9 +84,9 @@ def on_reservation_created(request):
         else:
             message = f"Bonjour, {guest_firstname}, votre réservation a été confirmée au {data['startDate']}. Si vous avez des questions, veuillez nous envoyer un courriel à info@cowansvillehotel.com. If you have an emergency, please refer to our " \
                       f"website for our cancellation policy. We look forward to welcoming you to our hotel."
-        send_message(MANAGER_PHONE_NUMBER, message)
+        send_message(guest_phone, message)
         logging.debug(
-            f"{datetime.now()}Sent reservation confirmation message to {guest_firstname} {guest_lastname} at {cell_phone}")
+            f"{datetime.now()}Sent reservation confirmation message to {guest_firstname} {guest_lastname} at {guest_phone}")
 
     except Exception as e:
         logging.error(f"{datetime.now()} - Error in cloudbeds webhook: " + str(e))
@@ -107,11 +105,11 @@ def on_reservation_status_changed(request):
                                 headers={"Authorization": f"Bearer {CONFIG_DATA['access_token']}", },
                                 params={"reservationID": reservation_id})
         guest = response.json()["data"]
-        cell_phone = trim_phone(guest["cellPhone"])
+        guest_phone = trim_phone(guest["phone"])
         if data['status'] == "no_show":
 
             send_message(
-                MANAGER_PHONE_NUMBER,
+                guest_phone,
                 f"""
 Hi, {guest['firstName']} {guest['lastName']}
 
@@ -121,7 +119,7 @@ Have a nice day!
                  """)
         elif data['status'] == "canceled":
             send_message(
-                MANAGER_PHONE_NUMBER,
+                guest_phone,
                 f"""
 Hi, {guest['firstName']} {guest['lastName']}
 
@@ -131,7 +129,7 @@ Have a nice day!
                  """)
         elif data['status'] == "checked_in":
             send_message(
-                MANAGER_PHONE_NUMBER,
+                guest_phone,
                 f"""
 Hi {guest['firstName']} {guest['lastName']},
 Your invoice can be downloaded on hotelcowansville.ca/invoice/{reservation_id} when it reaches your check-out date.
@@ -168,11 +166,11 @@ def on_reservation_dates_changed(request):
                                 headers={"Authorization": f"Bearer {CONFIG_DATA['access_token']}", },
                                 params={"reservationID": reservation_id})
         guest = response.json()["data"]
-        cell_phone = trim_phone(guest["cellPhone"])
+        guest_phone = trim_phone(guest["phone"])
         logging.debug(
             f"")
         send_message(
-            MANAGER_PHONE_NUMBER,
+            guest_phone,
             f"""
 The date of your reservation {reservation_id} has been changed.
  New Date: check-in: {data['startDate']}; check-out: {data['endDate']}""")
@@ -189,10 +187,15 @@ def on_reservation_accommodation_type_changed(request):
         data = json.loads(request.body)
         logging.debug(data)
         reservation_id = data['reservationId']
+        response = requests.get("https://hotels.cloudbeds.com/api/v1.1/getGuest",
+                                headers={"Authorization": f"Bearer {CONFIG_DATA['access_token']}", },
+                                params={"reservationID": reservation_id})
+        guest = response.json()["data"]
+        guest_phone = trim_phone(guest["phone"])
         room_type_id = data['roomTypeId']
         room_type_name = get_room_type_name(room_type_id)
         logging.debug(f"Your reservation room type has been changed to {room_type_name}")
-        send_message(MANAGER_PHONE_NUMBER, f"Your reservation room type has been changed to {room_type_name}")
+        send_message(guest_phone, f"Your reservation room type has been changed to {room_type_name}")
     except Exception as e:
         logging.error(f"{datetime.now()} - Error in reservation accommodation type change webhook: " + str(e))
         return JsonResponse({"Success": False, "Error": str(e)})
@@ -208,9 +211,14 @@ def on_reservation_accommodation_changed(request):
         data = json.loads(request.body)
         logging.debug(data)
         reservation_id = data['reservationId']
+        response = requests.get("https://hotels.cloudbeds.com/api/v1.1/getGuest",
+                                headers={"Authorization": f"Bearer {CONFIG_DATA['access_token']}", },
+                                params={"reservationID": reservation_id})
+        guest = response.json()["data"]
+        guest_phone = trim_phone(guest["phone"])
         room_name = get_room_name(data['roomId'])
         logging.debug(f"Your assigned room has been changed. New room number: {room_name}")
-        send_message(MANAGER_PHONE_NUMBER, f"Your assigned room has been changed. New room number: {room_name}")
+        send_message(guest_phone, f"Your assigned room has been changed. New room number: {room_name}")
     except Exception as e:
         logging.error(f"{datetime.now()} - Error in reservation accommodation change webhook: " + str(e))
         return JsonResponse({"Success": False, "Error": str(e)})
