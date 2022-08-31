@@ -66,34 +66,32 @@ def on_sms_receive(request):  # Get the post QueryDict from the request.
 @require_POST
 @csrf_exempt
 def on_reservation_created(request):
-    if request.method == "POST":
-        try:
-            logging.info("Cloudbeds webhook: POST received")
-            # Get the JSON data from the request body
-            data = json.loads(request.body)
-            reservation_id = data['reservationId']
-            response = requests.get("https://hotels.cloudbeds.com/api/v1.1/getGuest",
-                                    headers={"Authorization": f"Bearer {CONFIG_DATA['access_token']}", },
-                                    params={"reservationID": reservation_id})
-            cell_phone = trim_phone(response.json()["data"]["cellPhone"])
-            phone = trim_phone(response.json()["data"]["phone"])
-            cell_phone = cell_phone if cell_phone else phone
-            guest_firstname = response.json()["data"]["firstName"]
-            guest_lastname = response.json()["data"]["lastName"]
-            if data['startDate'] == datetime.now().strftime("%Y-%m-%d") and datetime.now().hour >= 8:
-                message = f"Bonjour {guest_firstname}, vous avez une réservation à l'Hôtel Cowansville pour aujourd'hui. Veuillez vous enregistrer après 15h30. Nous avons un personnel limité pour nettoyer les chambres, donc tout enregistrement anticipé avant 15h00 sera refusé.Votre clé sera prête pour vous à la réception pour un enregistrement plus rapide si nous avons bien reçu votre paiement. Merci!"
-            else:
-                message = f"Bonjour, {guest_firstname}, votre réservation a été confirmée au {data['startDate']}. Si vous avez des questions, veuillez nous envoyer un courriel à info@cowansvillehotel.com. If you have an emergency, please refer to our " \
-                          f"website for our cancellation policy. We look forward to welcoming you to our hotel."
-            send_message(MANAGER_PHONE_NUMBER, message)
-            logging.debug(
-                f"{datetime.now()}Sent reservation confirmation message to {guest_firstname} {guest_lastname} at {cell_phone}")
+    try:
+        logging.info("Cloudbeds webhook: POST received")
+        # Get the JSON data from the request body
+        data = json.loads(request.body)
+        reservation_id = data['reservationId']
+        response = requests.get("https://hotels.cloudbeds.com/api/v1.1/getGuest",
+                                headers={"Authorization": f"Bearer {CONFIG_DATA['access_token']}", },
+                                params={"reservationID": reservation_id})
+        cell_phone = trim_phone(response.json()["data"]["cellPhone"])
+        phone = trim_phone(response.json()["data"]["phone"])
+        cell_phone = cell_phone if cell_phone else phone
+        guest_firstname = response.json()["data"]["firstName"]
+        guest_lastname = response.json()["data"]["lastName"]
+        if data['startDate'] == datetime.now().strftime("%Y-%m-%d") and datetime.now().hour >= 8:
+            message = f"Bonjour {guest_firstname}, vous avez une réservation à l'Hôtel Cowansville pour aujourd'hui. Veuillez vous enregistrer après 15h30. Nous avons un personnel limité pour nettoyer les chambres, donc tout enregistrement anticipé avant 15h00 sera refusé.Votre clé sera prête pour vous à la réception pour un enregistrement plus rapide si nous avons bien reçu votre paiement. Merci!"
+        else:
+            message = f"Bonjour, {guest_firstname}, votre réservation a été confirmée au {data['startDate']}. Si vous avez des questions, veuillez nous envoyer un courriel à info@cowansvillehotel.com. If you have an emergency, please refer to our " \
+                      f"website for our cancellation policy. We look forward to welcoming you to our hotel."
+        send_message(MANAGER_PHONE_NUMBER, message)
+        logging.debug(
+            f"{datetime.now()}Sent reservation confirmation message to {guest_firstname} {guest_lastname} at {cell_phone}")
 
-        except Exception as e:
-            logging.error(f"{datetime.now()} - Error in cloudbeds webhook: " + str(e))
-        return HttpResponse("Cloudbeds webhook: POST received")
-    else:
-        logging.error(f"{datetime.now()} - Cloudbeds webhook: GET received")
+    except Exception as e:
+        logging.error(f"{datetime.now()} - Error in cloudbeds webhook: " + str(e))
+        return JsonResponse({"Success": False, "Error": str(e)})
+    return JsonResponse({"Success": True})
 
 
 @require_POST
@@ -139,7 +137,8 @@ Your invoice can be downloaded on hotelcowansville.ca/invoice/{reservation_id} w
 
     except Exception as e:
         logging.error(f"{datetime.now()} - Error in reservation status change webhook: " + str(e))
-
+        return JsonResponse({"Success": False, "Error": str(e)})
+    return JsonResponse({"Success": True})
 
 if DEBUG:
     REDIRECT_URI = "https://127.0.0.1:8000/lab/oauth2/callback"
@@ -165,7 +164,8 @@ def on_reservation_dates_changed(request):
         send_message(MANAGER_PHONE_NUMBER, "Reservation dates changed")
     except Exception as e:
         logging.error(f"{datetime.now()} - Error in reservation dates change webhook: " + str(e))
-
+        return JsonResponse({"Success": False, "Error": str(e)})
+    return JsonResponse({"Success": True})
 
 @require_POST
 @csrf_exempt
@@ -178,7 +178,8 @@ def on_reservation_accommodation_type_changed(request):
         send_message(MANAGER_PHONE_NUMBER, "Reservation accommodation type changed")
     except Exception as e:
         logging.error(f"{datetime.now()} - Error in reservation accommodation type change webhook: " + str(e))
-
+        return JsonResponse({"Success": False, "Error": str(e)})
+    return JsonResponse({"Success": True})
 
 @require_POST
 @csrf_exempt
@@ -190,7 +191,8 @@ def on_reservation_accommodation_changed(request):
         send_message(MANAGER_PHONE_NUMBER, "Reservation accommodation changed")
     except Exception as e:
         logging.error(f"{datetime.now()} - Error in reservation accommodation change webhook: " + str(e))
-
+        return JsonResponse({"Success": False, "Error": str(e)})
+    return JsonResponse({"Success": True})
 
 def cloudbeds_login(request):
     # send user to cloudbeds login page (oauth), cloudbeds is responsible for redirecting user to callback page
