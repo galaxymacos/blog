@@ -187,7 +187,7 @@ def on_reservation_accommodation_type_changed(request):
     try:
         data = json.loads(request.body)
         logging.debug(data)
-        reservation_id = data['reservationID']
+        reservation_id = data['reservationId']
         logging.debug(
             f"Your reservation accommodation type has been changed to {data['roomTypeID']}")
         send_message(MANAGER_PHONE_NUMBER, "Reservation accommodation type changed")
@@ -202,8 +202,8 @@ def on_reservation_accommodation_type_changed(request):
 def on_reservation_accommodation_changed(request):
     try:
         data = json.loads(request.body)
-        logging.debug(data)
-        reservation_id = data['reservationID']
+        # logging.debug(data)
+        reservation_id = data['reservationId']
         logging.debug(f"Your reservation accommodation has been changed. New accommodation: {data['roomID']}")
         send_message(MANAGER_PHONE_NUMBER, "Reservation accommodation changed")
     except Exception as e:
