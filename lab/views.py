@@ -19,7 +19,7 @@ from twilio.rest import Client
 
 from blog.settings import *
 from deepl.util import translate
-from lab.utils import get_room_type_name
+from lab.utils import get_room_type_name, get_room_name
 
 
 # Create your views here.
@@ -191,9 +191,8 @@ def on_reservation_accommodation_type_changed(request):
         reservation_id = data['reservationId']
         room_type_id = data['roomTypeId']
         room_type_name = get_room_type_name(room_type_id)
-        logging.debug(
-            f"Your reservation accommodation type has been changed to {room_type_name}")
-        send_message(MANAGER_PHONE_NUMBER, f"Reservation accommodation type changed to {room_type_name}")
+        logging.debug(f"Your reservation accommodation type has been changed to {room_type_name}")
+        send_message(MANAGER_PHONE_NUMBER, f"Your reservation accommodation type has been changed to {room_type_name}")
     except Exception as e:
         logging.error(f"{datetime.now()} - Error in reservation accommodation type change webhook: " + str(e))
         return JsonResponse({"Success": False, "Error": str(e)})
@@ -205,15 +204,16 @@ def on_reservation_accommodation_type_changed(request):
 @csrf_exempt
 def on_reservation_accommodation_changed(request):
     pass
-    # try:
-    #     data = json.loads(request.body)
-    #     logging.debug(data)
-    #     reservation_id = data['reservationId']
-    #     logging.debug(f"Your reservation accommodation has been changed. New accommodation: {data['roomId']}")
-    #     send_message(MANAGER_PHONE_NUMBER, "Reservation accommodation changed")
-    # except Exception as e:
-    #     logging.error(f"{datetime.now()} - Error in reservation accommodation change webhook: " + str(e))
-    #     return JsonResponse({"Success": False, "Error": str(e)})
+    try:
+        data = json.loads(request.body)
+        logging.debug(data)
+        reservation_id = data['reservationId']
+        room_name = get_room_name(data['roomId'])
+        logging.debug(f"Your reservation accommodation has been changed. New accommodation: {room_name}")
+        send_message(MANAGER_PHONE_NUMBER, f"Your reservation accommodation has been changed. New accommodation: {room_name}")
+    except Exception as e:
+        logging.error(f"{datetime.now()} - Error in reservation accommodation change webhook: " + str(e))
+        return JsonResponse({"Success": False, "Error": str(e)})
     return JsonResponse({"Success": True})
 
 

@@ -26,19 +26,19 @@ def get_room_type_name(room_type_id):
         return None
     return room_type_name
 
-# def getRoomName(room_id):
-#     headers = {
-#         'Authorization': f"Bearer {CONFIG_DATA['access_token']}",
-#     }
-#     params = {
-#         "roomId": room_id,
-#     }
-#     response = requests.get(
-#         "https://hotels.cloudbeds.com/api/v1.1/getRooms",
-#         headers=headers,
-#         params=params,
-#     )
-#     if not response.ok:
-#         return None
-#     print(response.json()['data'])
-#     return JsonResponse(response.json()['data'])
+
+def get_room_name(room_id):
+    headers = {
+        'Authorization': f"Bearer {CONFIG_DATA['access_token']}",
+    }
+    response = requests.get(
+        "https://hotels.cloudbeds.com/api/v1.1/getRooms",
+        headers=headers,
+    )
+    if not response.ok:
+        return None
+    rooms = response.json()['data']['rooms']
+    for room in rooms:
+        if room['roomID'] == room_id:
+            return room['roomName']
+    return None
