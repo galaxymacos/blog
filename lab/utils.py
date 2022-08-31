@@ -37,7 +37,7 @@ def get_room_name(room_id):
     )
     if not response.ok:
         return None
-    rooms = response.json()['data']['rooms']
+    rooms = response.json()['data'][0]['rooms']
     for room in rooms:
         if room['roomID'] == room_id:
             return room['roomName']
