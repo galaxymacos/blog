@@ -70,6 +70,7 @@ def on_reservation_created(request):
         logging.info("Cloudbeds webhook: POST received")
         # Get the JSON data from the request body
         data = json.loads(request.body)
+        logging.debug(data)
         reservation_id = data['reservationId']
         response = requests.get("https://hotels.cloudbeds.com/api/v1.1/getGuest",
                                 headers={"Authorization": f"Bearer {CONFIG_DATA['access_token']}", },
@@ -99,6 +100,7 @@ def on_reservation_created(request):
 def on_reservation_status_changed(request):
     try:
         data = json.loads(request.body)
+        logging.debug(data)
         reservation_id = data['reservationId']
         response = requests.get("https://hotels.cloudbeds.com/api/v1.1/getGuest",
                                 headers={"Authorization": f"Bearer {CONFIG_DATA['access_token']}", },
@@ -158,9 +160,10 @@ oauth_url = "https://hotels.cloudbeds.com/api/v1.1/oauth?" \
 def on_reservation_dates_changed(request):
     try:
         data = json.loads(request.body)
+        logging.debug(data)
         reservation_id = data['reservationId']
-        logging.debug(
-            f"Your reservation dates have been changed. New Date: check-in on {data['startDate']}; check-out on {data['stateDate']}")
+        # logging.debug(
+        #     f"Your reservation dates have been changed. New Date: check-in on {data['startDate']}; check-out on {data['endDate']}")
         send_message(MANAGER_PHONE_NUMBER, "Reservation dates changed")
     except Exception as e:
         logging.error(f"{datetime.now()} - Error in reservation dates change webhook: " + str(e))
@@ -172,6 +175,7 @@ def on_reservation_dates_changed(request):
 def on_reservation_accommodation_type_changed(request):
     try:
         data = json.loads(request.body)
+        logging.debug(data)
         reservation_id = data['reservationID']
         logging.debug(
             f"Your reservation accommodation type has been changed. New accommodation type: {data['roomTypeID']}")
@@ -186,6 +190,7 @@ def on_reservation_accommodation_type_changed(request):
 def on_reservation_accommodation_changed(request):
     try:
         data = json.loads(request.body)
+        logging.debug(data)
         reservation_id = data['reservationId']
         logging.debug(f"Your reservation accommodation has been changed. New accommodation: {data['roomID']}")
         send_message(MANAGER_PHONE_NUMBER, "Reservation accommodation changed")
