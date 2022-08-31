@@ -118,7 +118,7 @@ A no-show record under your reservation {reservation_id} is recorded in our syst
  
 Have a nice day!                 
                  """)
-        elif data['status'] == "cancelled":
+        elif data['status'] == "canceled":
             send_message(
                 MANAGER_PHONE_NUMBER,
                 f"""
@@ -161,7 +161,8 @@ oauth_url = "https://hotels.cloudbeds.com/api/v1.1/oauth?" \
 def on_reservation_dates_changed(request):
     try:
         data = json.loads(request.body)
-        reservation_id = data['reservationID']
+        logging.debug(data)
+        reservation_id = data['reservationId']
         response = requests.get("https://hotels.cloudbeds.com/api/v1.1/getGuest",
                                 headers={"Authorization": f"Bearer {CONFIG_DATA['access_token']}", },
                                 params={"reservationID": reservation_id})
