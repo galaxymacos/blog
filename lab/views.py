@@ -201,19 +201,20 @@ def on_reservation_accommodation_type_changed(request):
 
 
 # Change room within the same room type
-# @require_POST
-# @csrf_exempt
-# def on_reservation_accommodation_changed(request):
-#     try:
-#         data = json.loads(request.body)
-#         logging.debug(data)
-#         reservation_id = data['reservationId']
-#         logging.debug(f"Your reservation accommodation has been changed. New accommodation: {data['roomId']}")
-#         send_message(MANAGER_PHONE_NUMBER, "Reservation accommodation changed")
-#     except Exception as e:
-#         logging.error(f"{datetime.now()} - Error in reservation accommodation change webhook: " + str(e))
-#         return JsonResponse({"Success": False, "Error": str(e)})
-#     return JsonResponse({"Success": True})
+@require_POST
+@csrf_exempt
+def on_reservation_accommodation_changed(request):
+    pass
+    # try:
+    #     data = json.loads(request.body)
+    #     logging.debug(data)
+    #     reservation_id = data['reservationId']
+    #     logging.debug(f"Your reservation accommodation has been changed. New accommodation: {data['roomId']}")
+    #     send_message(MANAGER_PHONE_NUMBER, "Reservation accommodation changed")
+    # except Exception as e:
+    #     logging.error(f"{datetime.now()} - Error in reservation accommodation change webhook: " + str(e))
+    #     return JsonResponse({"Success": False, "Error": str(e)})
+    return JsonResponse({"Success": True})
 
 
 def cloudbeds_login(request):
