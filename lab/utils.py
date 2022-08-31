@@ -13,14 +13,14 @@ def get_room_type_name(room_type_id):
             'Authorization': f"Bearer {CONFIG_DATA['access_token']}",
         }
         params = {
-            "roomTypeId": room_type_id,
+            "roomTypeIDs": str(room_type_id),
         }
         response = requests.get(
-            "https://hotels.cloudbeds.com/api/v1.1/getRooms",
+            "https://hotels.cloudbeds.com/api/v1.1/getRoomTypes",
             headers=headers,
             params=params,
         )
-        room_type_name = response.json()['data'][0]['roomName']
+        room_type_name = response.json()['data'][0]['roomTypeName']
     except Exception as e:
         logging.error(f"{datetime.now()} - Xun - get_room_type_name fail - {e}")
         return None
