@@ -19,6 +19,7 @@ from twilio.rest import Client
 
 from blog.settings import *
 from deepl.util import translate
+from lab.utils import get_room_type_name
 
 
 # Create your views here.
@@ -188,28 +189,31 @@ def on_reservation_accommodation_type_changed(request):
         data = json.loads(request.body)
         logging.debug(data)
         reservation_id = data['reservationId']
+        room_type_id = data['roomTypeId']
+        room_type_name = get_room_type_name(room_type_id)
         logging.debug(
-            f"Your reservation accommodation type has been changed to {data['roomTypeID']}")
-        send_message(MANAGER_PHONE_NUMBER, "Reservation accommodation type changed")
+            f"Your reservation accommodation type has been changed to {room_type_name}")
+        send_message(MANAGER_PHONE_NUMBER, f"Reservation accommodation type changed to {room_type_name}")
     except Exception as e:
         logging.error(f"{datetime.now()} - Error in reservation accommodation type change webhook: " + str(e))
         return JsonResponse({"Success": False, "Error": str(e)})
     return JsonResponse({"Success": True})
 
 
-@require_POST
-@csrf_exempt
-def on_reservation_accommodation_changed(request):
-    try:
-        data = json.loads(request.body)
-        logging.debug(data)
-        reservation_id = data['reservationId']
-        logging.debug(f"Your reservation accommodation has been changed. New accommodation: {data['roomId']}")
-        send_message(MANAGER_PHONE_NUMBER, "Reservation accommodation changed")
-    except Exception as e:
-        logging.error(f"{datetime.now()} - Error in reservation accommodation change webhook: " + str(e))
-        return JsonResponse({"Success": False, "Error": str(e)})
-    return JsonResponse({"Success": True})
+# Change room within the same room type
+# @require_POST
+# @csrf_exempt
+# def on_reservation_accommodation_changed(request):
+#     try:
+#         data = json.loads(request.body)
+#         logging.debug(data)
+#         reservation_id = data['reservationId']
+#         logging.debug(f"Your reservation accommodation has been changed. New accommodation: {data['roomId']}")
+#         send_message(MANAGER_PHONE_NUMBER, "Reservation accommodation changed")
+#     except Exception as e:
+#         logging.error(f"{datetime.now()} - Error in reservation accommodation change webhook: " + str(e))
+#         return JsonResponse({"Success": False, "Error": str(e)})
+#     return JsonResponse({"Success": True})
 
 
 def cloudbeds_login(request):
@@ -218,15 +222,13 @@ def cloudbeds_login(request):
 
 
 def cloudbeds_login_redirect(request):
-    with open(BASE_DIR / "config_data.json", "r") as f:
-        local_config_data = json.load(f)
     code = request.GET.get('code')
     codes = exchange_code(request, code)
-    local_config_data['access_token'] = codes[0]
-    local_config_data['refresh_token'] = codes[1]
-    local_config_data['expires_in'] = (datetime.now() + timedelta(hours=1)).strftime("%Y-%m-%d %H:%M:%S")
+    CONFIG_DATA['access_token'] = codes[0]
+    CONFIG_DATA['refresh_token'] = codes[1]
+    CONFIG_DATA['expires_in'] = (datetime.now() + timedelta(hours=1)).strftime("%Y-%m-%d %H:%M:%S")
     with open(BASE_DIR / "config_data.json", "w") as f:
-        json.dump(local_config_data, f)
+        json.dump(CONFIG_DATA, f)
     return HttpResponse("Successful")
 
 
@@ -243,24 +245,22 @@ def try_refresh(request):
 
 def refresh():
     try:
-        with open(BASE_DIR / "config_data.json", "r") as f:
-            local_config_data = json.load(f)
         data = {
             "grant_type": "refresh_token",
             "client_id": CLOUDBEDS_CLIENT_ID,
             "client_secret": CLOUDBEDS_CLIENT_SECRET,
-            "refresh_token": local_config_data['refresh_token'],
+            "refresh_token": CONFIG_DATA['refresh_token'],
         }
         header = {
             "Content-Type": "application/x-www-form-urlencoded"
         }
         response = requests.post("https://hotels.cloudbeds.com/api/v1.1/access_token", data=data, headers=header)
         credentials = response.json()
-        local_config_data['access_token'] = credentials['access_token']
-        local_config_data['refresh_token'] = credentials['refresh_token']
-        local_config_data['expires_in'] = (datetime.now() + timedelta(minutes=59)).strftime("%Y-%m-%d %H:%M:%S")
+        CONFIG_DATA['access_token'] = credentials['access_token']
+        CONFIG_DATA['refresh_token'] = credentials['refresh_token']
+        CONFIG_DATA['expires_in'] = (datetime.now() + timedelta(minutes=59)).strftime("%Y-%m-%d %H:%M:%S")
         with open(BASE_DIR / "config_data.json", "w") as f:
-            json.dump(local_config_data, f)
+            json.dump(CONFIG_DATA, f)
         # send_message(MANAGER_PHONE_NUMBER, "Access token refreshed")
         logging.info("Access token refreshed at {}".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
     except Exception as e:
