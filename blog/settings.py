@@ -184,7 +184,3 @@ else:
 
 # Configure the default logging location, and logging level
 logging.basicConfig(filename=BASE_DIR / 'logs/debug.log', encoding='utf-8', level=logging.DEBUG)
-logging.basicConfig(filename=BASE_DIR / 'logs/info.log', encoding='utf-8', level=logging.INFO)
-logging.basicConfig(filename=BASE_DIR / 'logs/warning.log', encoding='utf-8', level=logging.WARNING)
-logging.basicConfig(filename=BASE_DIR / 'logs/error.log', encoding='utf-8', level=logging.ERROR)
-logging.basicConfig(filename=BASE_DIR / 'logs/critical.log', encoding='utf-8', level=logging.CRITICAL)

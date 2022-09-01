@@ -1,18 +1,8 @@
-import json
-
-from django.http import HttpResponse
-from django.shortcuts import render
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_POST
-import logging
-
-import json
 from datetime import datetime, timedelta
 
 import requests
-from django.http import HttpRequest, JsonResponse, HttpResponse
-from django.shortcuts import redirect, render
-from django.urls import reverse
+from django.http import JsonResponse, HttpResponse
+from django.shortcuts import redirect
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from twilio.rest import Client
@@ -98,8 +88,10 @@ def on_reservation_created(request):
 @csrf_exempt
 def on_reservation_status_changed(request):
     try:
+        logging.debug("POST: ", request.POST)
+        logging.debug("DATA: ", request.body)
         data = json.loads(request.body)
-        logging.debug(data)
+
         reservation_id = data['reservationID']
         response = requests.get("https://hotels.cloudbeds.com/api/v1.1/getGuest",
                                 headers={"Authorization": f"Bearer {CONFIG_DATA['access_token']}", },
