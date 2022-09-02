@@ -57,11 +57,10 @@ def on_sms_receive(request):  # Get the post QueryDict from the request.
 @require_POST
 @csrf_exempt
 def on_reservation_created(request):
+    logging.debug(f"on_reservation_created: {request.body}")
     try:
-        logging.debug("Cloudbeds webhook: POST received")
         # Get the JSON data from the request body
         data = json.loads(request.body)
-        logging.debug(data)
         reservation_id = data['reservationID']
         response = requests.get("https://hotels.cloudbeds.com/api/v1.1/getGuest",
                                 headers={"Authorization": f"Bearer {CONFIG_DATA['access_token']}", },
@@ -87,6 +86,7 @@ def on_reservation_created(request):
 @require_POST
 @csrf_exempt
 def on_reservation_status_changed(request):
+    logging.debug(f"on_reservation_status_changed: {request.body}")
     try:
         logging.debug("POST: ", request.POST)
         logging.debug("DATA: ", request.body)
@@ -150,6 +150,7 @@ oauth_url = "https://hotels.cloudbeds.com/api/v1.1/oauth?" \
 @require_POST
 @csrf_exempt
 def on_reservation_dates_changed(request):
+    logging.debug(f"on_reservation_dates_changed: {request.body}")
     try:
         data = json.loads(request.body)
         logging.debug(data)
@@ -175,6 +176,7 @@ The date of your reservation {reservation_id} has been changed.
 @require_POST
 @csrf_exempt
 def on_reservation_accommodation_type_changed(request):
+    logging.debug(f"on_reservation_accommodation_type_changed: {request.body}")
     try:
         data = json.loads(request.body)
         logging.debug(data)
@@ -198,7 +200,7 @@ def on_reservation_accommodation_type_changed(request):
 @require_POST
 @csrf_exempt
 def on_reservation_accommodation_changed(request):
-    pass
+    logging.debug(f"on_reservation_accommodation_changed: {request.body}")
     try:
         data = json.loads(request.body)
         logging.debug(data)
