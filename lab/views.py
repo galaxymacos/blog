@@ -88,8 +88,6 @@ def on_reservation_created(request):
 def on_reservation_status_changed(request):
     logging.debug(f"on_reservation_status_changed: {request.body}")
     try:
-        logging.debug("POST: ", request.POST)
-        logging.debug("DATA: ", request.body)
         data = json.loads(request.body)
 
         reservation_id = data['reservationID']
@@ -240,10 +238,11 @@ def try_refresh(request):
     if datetime.strptime(str(CONFIG_DATA['expires_in']), "%Y-%m-%d %H:%M:%S") < datetime.now():
         return cloudbeds_login(request)
     else:
-        if refresh():
+        try:
+            refresh()
             return HttpResponse('Access token refreshed')
-        else:
-            return HttpResponse('Access token refresh failed')
+        except Exception as e:
+            return HttpResponse(f'Error in refreshing access token: {e}')
 
 
 def refresh():
@@ -261,11 +260,11 @@ def refresh():
         credentials = response.json()
         CONFIG_DATA['access_token'] = credentials['access_token']
         CONFIG_DATA['refresh_token'] = credentials['refresh_token']
-        CONFIG_DATA['expires_in'] = (datetime.now() + timedelta(minutes=59)).strftime("%Y-%m-%d %H:%M:%S")
+        CONFIG_DATA['expires_in'] = (datetime.now() + timedelta(hours=1)).strftime("%Y-%m-%d %H:%M:%S")
         with open(BASE_DIR / "config_data.json", "w") as f:
             json.dump(CONFIG_DATA, f)
         # send_message(MANAGER_PHONE_NUMBER, "Access token refreshed")
-        logging.info("Access token refreshed at {}".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+        logging.info(f"New Access token {CONFIG_DATA['access_token']} at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     except Exception as e:
         logging.warning(f"Error refreshing access token at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         send_message(MANAGER_PHONE_NUMBER, "Access token refresh failed, error:" + str(e))
