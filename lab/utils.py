@@ -4,13 +4,13 @@ from datetime import datetime
 import requests
 from django.http import JsonResponse
 
-from blog.settings import CONFIG_DATA
+from blog.settings import BASE_DIR
 
 
 def get_room_type_name(room_type_id):
     try:
         headers = {
-            'Authorization': f"Bearer {CONFIG_DATA['access_token']}",
+            'Authorization': f"Bearer {load_access_token()}",
         }
         params = {
             "roomTypeIDs": str(room_type_id),
@@ -29,7 +29,7 @@ def get_room_type_name(room_type_id):
 
 def get_room_name(room_id):
     headers = {
-        'Authorization': f"Bearer {CONFIG_DATA['access_token']}",
+        'Authorization': f"Bearer {load_access_token()}",
     }
     response = requests.get(
         "https://hotels.cloudbeds.com/api/v1.1/getRooms",
@@ -42,3 +42,26 @@ def get_room_name(room_id):
         if room['roomID'] == room_id:
             return room['roomName']
     return None
+
+
+# Token Management
+def load_access_token():
+    with open(BASE_DIR / "access_token.txt", "r") as f:
+        access_token = f.read()
+        return access_token
+
+
+def save_access_token(access_token):
+    with open(BASE_DIR / "access_token.txt", "w") as f:
+        f.write(access_token)
+
+
+def load_refresh_token():
+    with open(BASE_DIR / "refresh_token.txt", "r") as f:
+        refresh_token = f.read()
+        return refresh_token
+
+
+def save_refresh_token(refresh_token):
+    with open(BASE_DIR / "refresh_token.txt", "w") as f:
+        f.write(refresh_token)

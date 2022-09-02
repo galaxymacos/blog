@@ -174,13 +174,5 @@ if not DEBUG:
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-CONFIG_DATA = dict()
-if os.path.exists(BASE_DIR / 'config_data.json'):
-    with open(BASE_DIR / "config_data.json", "r") as read_file:
-        CONFIG_DATA = json.load(read_file)
-else:
-    with open(BASE_DIR / "config_data.json", "w") as write_file:
-        json.dump(CONFIG_DATA, write_file)
-
 # Configure the default logging location, and logging level
 logging.basicConfig(filename=BASE_DIR / 'logs/debug.log', encoding='utf-8', level=logging.DEBUG)

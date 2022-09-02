@@ -9,7 +9,8 @@ from twilio.rest import Client
 
 from blog.settings import *
 from deepl.util import translate
-from lab.utils import get_room_type_name, get_room_name
+from lab.utils import get_room_type_name, get_room_name, load_access_token, save_access_token, save_refresh_token, \
+    load_refresh_token
 
 
 # Create your views here.
@@ -63,7 +64,7 @@ def on_reservation_created(request):
         data = json.loads(request.body)
         reservation_id = data['reservationID']
         response = requests.get("https://hotels.cloudbeds.com/api/v1.1/getGuest",
-                                headers={"Authorization": f"Bearer {CONFIG_DATA['access_token']}", },
+                                headers={"Authorization": f"Bearer {load_access_token()}", },
                                 params={"reservationID": reservation_id})
         guest_phone = trim_phone(response.json()["data"]["phone"])
         guest_firstname = response.json()["data"]["firstName"]
@@ -92,7 +93,7 @@ def on_reservation_status_changed(request):
 
         reservation_id = data['reservationID']
         response = requests.get("https://hotels.cloudbeds.com/api/v1.1/getGuest",
-                                headers={"Authorization": f"Bearer {CONFIG_DATA['access_token']}", },
+                                headers={"Authorization": f"Bearer {load_access_token()}", },
                                 params={"reservationID": reservation_id})
         guest = response.json()["data"]
         guest_phone = trim_phone(guest["phone"])
@@ -154,7 +155,7 @@ def on_reservation_dates_changed(request):
         logging.debug(data)
         reservation_id = data['reservationId']
         response = requests.get("https://hotels.cloudbeds.com/api/v1.1/getGuest",
-                                headers={"Authorization": f"Bearer {CONFIG_DATA['access_token']}", },
+                                headers={"Authorization": f"Bearer {load_access_token()}", },
                                 params={"reservationID": reservation_id})
         guest = response.json()["data"]
         guest_phone = trim_phone(guest["phone"])
@@ -180,7 +181,7 @@ def on_reservation_accommodation_type_changed(request):
         logging.debug(data)
         reservation_id = data['reservationId']
         response = requests.get("https://hotels.cloudbeds.com/api/v1.1/getGuest",
-                                headers={"Authorization": f"Bearer {CONFIG_DATA['access_token']}", },
+                                headers={"Authorization": f"Bearer {load_access_token()}", },
                                 params={"reservationID": reservation_id})
         guest = response.json()["data"]
         guest_phone = trim_phone(guest["phone"])
@@ -204,7 +205,7 @@ def on_reservation_accommodation_changed(request):
         logging.debug(data)
         reservation_id = data['reservationId']
         response = requests.get("https://hotels.cloudbeds.com/api/v1.1/getGuest",
-                                headers={"Authorization": f"Bearer {CONFIG_DATA['access_token']}", },
+                                headers={"Authorization": f"Bearer {load_access_token()}", },
                                 params={"reservationID": reservation_id})
         guest = response.json()["data"]
         guest_phone = trim_phone(guest["phone"])
@@ -225,24 +226,18 @@ def cloudbeds_login(request):
 def cloudbeds_login_redirect(request):
     code = request.GET.get('code')
     codes = exchange_code(request, code)
-    CONFIG_DATA['access_token'] = codes[0]
-    CONFIG_DATA['refresh_token'] = codes[1]
-    CONFIG_DATA['expires_in'] = (datetime.now() + timedelta(hours=1)).strftime("%Y-%m-%d %H:%M:%S")
-    with open(BASE_DIR / "config_data.json", "w") as f:
-        json.dump(CONFIG_DATA, f)
+    save_access_token(codes[0])
+    save_refresh_token(codes[1])
     return HttpResponse("Successful")
 
 
 def try_refresh(request):
     # Refresh access token (should be called before access token is expired, which is 1 hour)
-    if datetime.strptime(str(CONFIG_DATA['expires_in']), "%Y-%m-%d %H:%M:%S") < datetime.now():
-        return cloudbeds_login(request)
-    else:
-        try:
-            refresh()
-            return HttpResponse('Access token refreshed')
-        except Exception as e:
-            return HttpResponse(f'Error in refreshing access token: {e}')
+    try:
+        refresh()
+        return HttpResponse('Access token refreshed')
+    except Exception as e:
+        return HttpResponse(f'Error in refreshing access token: {e}')
 
 
 def refresh():
@@ -251,22 +246,19 @@ def refresh():
             "grant_type": "refresh_token",
             "client_id": CLOUDBEDS_CLIENT_ID,
             "client_secret": CLOUDBEDS_CLIENT_SECRET,
-            "refresh_token": CONFIG_DATA['refresh_token'],
+            "refresh_token": load_refresh_token(),
         }
         header = {
             "Content-Type": "application/x-www-form-urlencoded"
         }
         response = requests.post("https://hotels.cloudbeds.com/api/v1.1/access_token", data=data, headers=header)
         credentials = response.json()
-        CONFIG_DATA['access_token'] = credentials['access_token']
-        CONFIG_DATA['refresh_token'] = credentials['refresh_token']
-        CONFIG_DATA['expires_in'] = (datetime.now() + timedelta(hours=1)).strftime("%Y-%m-%d %H:%M:%S")
-        with open(BASE_DIR / "config_data.json", "w") as f:
-            json.dump(CONFIG_DATA, f)
-        # send_message(MANAGER_PHONE_NUMBER, "Access token refreshed")
-        logging.info(f"New Access token {CONFIG_DATA['access_token']} at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        save_access_token(credentials['access_token'])
+        save_refresh_token(credentials['refresh_token'])
+        logging.info(
+            f"New Access token {load_access_token()} at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     except Exception as e:
-        logging.warning(f"Error refreshing access token at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        logging.warning(f"Error refreshing access token at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}. Error: {e}. Maybe need to oauth login again because of loss of connection")
         send_message(MANAGER_PHONE_NUMBER, "Access token refresh failed, error:" + str(e))
 
 
@@ -332,7 +324,7 @@ def subscribe_to_webhook(request):
         for webhook_data in webhooks_data:
             response = requests.post(
                 "https://hotels.cloudbeds.com/api/v1.1/postWebhook",
-                headers={"Authorization": f"Bearer {CONFIG_DATA['access_token']}"},
+                headers={"Authorization": f"Bearer {load_access_token()}"},
                 data=webhook_data
             )
 
@@ -352,7 +344,7 @@ def list_webhooks(request):
     print("list webhooks")
     try:
         headers = {
-            "Authorization": f"Bearer {CONFIG_DATA['access_token']}",
+            "Authorization": f"Bearer {load_access_token()}",
         }
         response = requests.get("https://hotels.cloudbeds.com/api/v1.1/getWebhooks", headers=headers)
         if 'data' in response.json() and len(response.json()['data']) > 0:
@@ -367,7 +359,7 @@ def list_webhooks(request):
 def delete_webhooks(request):
     print("delete")
     headers = {
-        "Authorization": f"Bearer {CONFIG_DATA['access_token']}",
+        "Authorization": f"Bearer {load_access_token()}",
     }
     response = requests.get("https://hotels.cloudbeds.com/api/v1.1/getWebhooks", headers=headers)
     if 'data' in response.json() and len(response.json()['data']) > 0:
