@@ -43,7 +43,17 @@ def on_sms_receive(request):  # Get the post QueryDict from the request.
             logging.debug(f"{datetime.now()}: Received message from {phone} with body {body}")
             # Send translation to YuRuan
             message_chinese = translate(body, "ZH")
-            send_message(MANAGER_PHONE_NUMBER, message_chinese)
+            send_message(MANAGER_PHONE_NUMBER, f"""
+From: {phone}
+
+    {body}
+""")
+            # TODO send message to YuRuan
+            # send_message(MANAGER_PHONE_NUMBER, f"""
+            # From: {phone}
+            #
+            #     {body}
+            # """)
             # message_english = translate(body, "en")
             # send_message(RECEPTIONIST_PHONE_NUMBER, message_english)
             return HttpResponse("Twilio webhook: POST received")
@@ -58,7 +68,6 @@ def on_sms_receive(request):  # Get the post QueryDict from the request.
 @require_POST
 @csrf_exempt
 def on_reservation_created(request):
-    logging.debug(f"on_reservation_created: {request.body}")
     try:
         # Get the JSON data from the request body
         data = json.loads(request.body)
@@ -87,7 +96,6 @@ def on_reservation_created(request):
 @require_POST
 @csrf_exempt
 def on_reservation_status_changed(request):
-    logging.debug(f"on_reservation_status_changed: {request.body}")
     try:
         data = json.loads(request.body)
 
@@ -122,10 +130,16 @@ Have a nice day!
             send_message(
                 guest_phone,
                 f"""
-Hi {guest['firstName']} {guest['lastName']},
-Your invoice can be downloaded on hotelcowansville.ca/invoice/{reservation_id} when it reaches your check-out date.
-                """
-            )
+Hi {guest['firstName']}, 
+
+Please follow our hotel rules at https://www.hotelcowansville.ca/hotel-rules.
+
+Your invoice can be downloaded on hotelcowansville.ca/invoice/{reservation_id} upon your check-out date.
+
+Please reply directly if you have any questions.
+
+I hope you have a great stay at Hotel Cowansville.
+""")
 
     except Exception as e:
         logging.error(f"{datetime.now()} - Error in reservation status change webhook: " + str(e))
@@ -149,7 +163,6 @@ oauth_url = "https://hotels.cloudbeds.com/api/v1.1/oauth?" \
 @require_POST
 @csrf_exempt
 def on_reservation_dates_changed(request):
-    logging.debug(f"on_reservation_dates_changed: {request.body}")
     try:
         data = json.loads(request.body)
         logging.debug(data)
@@ -175,7 +188,6 @@ The date of your reservation {reservation_id} has been changed.
 @require_POST
 @csrf_exempt
 def on_reservation_accommodation_type_changed(request):
-    logging.debug(f"on_reservation_accommodation_type_changed: {request.body}")
     try:
         data = json.loads(request.body)
         logging.debug(data)
@@ -259,7 +271,7 @@ def refresh():
             f"New Access token {load_access_token()} at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     except Exception as e:
         logging.warning(f"Error refreshing access token at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}. Error: {e}. Maybe need to oauth login again because of loss of connection")
-        send_message(MANAGER_PHONE_NUMBER, "Access token refresh failed, error:" + str(e))
+        send_message(MANAGER_PHONE_NUMBER, f"Error refreshing access token at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}. Error: {e}. Maybe need to oauth login again because of loss of connection")
 
 
 def exchange_code(request, code):
