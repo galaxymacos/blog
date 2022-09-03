@@ -172,13 +172,15 @@ def on_reservation_dates_changed(request):
                                 params={"reservationID": reservation_id})
         guest = response.json()["data"]
         guest_phone = trim_phone(guest["phone"])
-        logging.debug(
-            f"")
         send_message(
             guest_phone,
             f"""
-The date of your reservation {reservation_id} has been changed.
- New Date: check-in: {data['startDate']}; check-out: {data['endDate']}""")
+La date de votre réservation a été modifiée.
+
+Arriver: {data['startDate']}
+ 
+Partir: {data['endDate']}
+""")
     except Exception as e:
         logging.error(f"{datetime.now()} - Error in reservation dates change webhook: " + str(e))
         return JsonResponse({"Success": False, "Error": str(e)})
@@ -211,23 +213,25 @@ def on_reservation_accommodation_type_changed(request):
 @require_POST
 @csrf_exempt
 def on_reservation_accommodation_changed(request):
-    logging.debug(f"on_reservation_accommodation_changed: {request.body}")
-    try:
-        data = json.loads(request.body)
-        logging.debug(data)
-        reservation_id = data['reservationId']
-        response = requests.get("https://hotels.cloudbeds.com/api/v1.1/getGuest",
-                                headers={"Authorization": f"Bearer {load_access_token()}", },
-                                params={"reservationID": reservation_id})
-        guest = response.json()["data"]
-        guest_phone = trim_phone(guest["phone"])
-        room_name = get_room_name(data['roomId'])
-        logging.debug(f"Your assigned room has been changed. New room number: {room_name}")
-        send_message(guest_phone, f"Your assigned room has been changed. New room number: {room_name}")
-    except Exception as e:
-        logging.error(f"{datetime.now()} - Error in reservation accommodation change webhook: " + str(e))
-        return JsonResponse({"Success": False, "Error": str(e)})
-    return JsonResponse({"Success": True})
+    pass
+    # logging.debug(f"on_reservation_accommodation_changed: {request.body}")
+    # try:
+    #     data = json.loads(request.body)
+    #     logging.debug(data)
+    #     reservation_id = data['reservationId']
+    #     response = requests.get("https://hotels.cloudbeds.com/api/v1.1/getGuest",
+    #                             headers={"Authorization": f"Bearer {load_access_token()}", },
+    #                             params={"reservationID": reservation_id})
+    #     guest = response.json()["data"]
+    #     guest_phone = trim_phone(guest["phone"])
+    #     room_name = get_room_name(data['roomId'])
+    #     logging.debug(f"Your assigned room has been changed. New room number: {room_name}")
+    #     send_message(guest_phone, f"Your assigned room has been changed. New room number: {room_name}")
+    # except Exception as e:
+    #     logging.error(f"{datetime.now()} - Error in reservation accommodation change webhook: " + str(e))
+    #     return JsonResponse({"Success": False, "Error": str(e)})
+    # return JsonResponse({"Success": True})
+    #
 
 
 def cloudbeds_login(request):
@@ -270,8 +274,10 @@ def refresh():
         logging.info(
             f"New Access token {load_access_token()} at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     except Exception as e:
-        logging.warning(f"Error refreshing access token at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}. Error: {e}. Maybe need to oauth login again because of loss of connection")
-        send_message(MANAGER_PHONE_NUMBER, f"Error refreshing access token at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}. Error: {e}. Maybe need to oauth login again because of loss of connection")
+        logging.warning(
+            f"Error refreshing access token at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}. Error: {e}. Maybe need to oauth login again because of loss of connection")
+        send_message(MANAGER_PHONE_NUMBER,
+                     f"Error refreshing access token at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}. Error: {e}. Maybe need to oauth login again because of loss of connection")
 
 
 def exchange_code(request, code):
