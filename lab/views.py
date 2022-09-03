@@ -110,35 +110,35 @@ def on_reservation_status_changed(request):
             send_message(
                 guest_phone,
                 f"""
-Hi, {guest['firstName']} {guest['lastName']}
+Bonjour, {guest['firstName']} {guest['lastName']}
 
-A no-show record under your reservation {reservation_id} is recorded in our system. Please be aware that no refund will be made for any no-show reservation since we hold the room for you.
- 
-Have a nice day!                 
-                 """)
+Notre système indique que vous ne vous êtes pas enregistré la nuit dernière, nous avons donc marqué votre réservation comme non-présentation. Veuillez noter qu'aucun remboursement ne sera émis pour les réservations de non-présentation.
+
+Hôtel Cowansville
+ """)
         elif data['status'] == "canceled":
             send_message(
                 guest_phone,
                 f"""
-Hi, {guest['firstName']} {guest['lastName']}
+Bonjour, {guest['firstName']} {guest['lastName']}
 
-Your reservation {reservation_id} is cancelled. Cancellation fee may be applied according to our cancellation policy. Please refer our website at hotelcowansville.ca for more information. 
- 
-Have a nice day!                 
-                 """)
+Votre réservation est annulée. Des frais d'annulation peuvent être appliqués selon notre politique d'annulation. Veuillez vous référer à https://hotelcowansville.ca/cancellation-policy pour plus d'informations.
+
+Hôtel Cowansville
+""")
         elif data['status'] == "checked_in":
             send_message(
                 guest_phone,
                 f"""
-Hi {guest['firstName']}, 
+Bonjour {guest['firstName']}, 
 
-Please follow our hotel rules at https://www.hotelcowansville.ca/hotel-rules.
+Merci d'avoir choisi l'Hôtel Cowansville.
 
-Your invoice can be downloaded on hotelcowansville.ca/invoice/{reservation_id} upon your check-out date.
+Veuillez suivre nos règles d'hôtel à https://www.hotelcowansville.ca/hotel-rules.
 
-Please reply directly if you have any questions.
+Votre facture peut être téléchargée sur hotelcowansville.ca/invoice/{reservation_id} à votre date de départ.
 
-I hope you have a great stay at Hotel Cowansville.
+N'hésitez pas à répondre à ce message si vous avez des questions.
 """)
 
     except Exception as e:
