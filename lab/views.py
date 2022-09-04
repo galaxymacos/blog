@@ -79,10 +79,23 @@ def on_reservation_created(request):
         guest_firstname = response.json()["data"]["firstName"]
         guest_lastname = response.json()["data"]["lastName"]
         if data['startDate'] == datetime.now().strftime("%Y-%m-%d") and datetime.now().hour >= 8:
-            message = f"Bonjour {guest_firstname}, vous avez une réservation à l'Hôtel Cowansville pour aujourd'hui. Veuillez vous enregistrer après 15h30. Nous avons un personnel limité pour nettoyer les chambres, donc tout enregistrement anticipé avant 15h00 sera refusé.Votre clé sera prête pour vous à la réception pour un enregistrement plus rapide si nous avons bien reçu votre paiement. Merci!"
+            message = f"""
+Bonjour {guest_firstname},
+    
+Vous avez une réservation à l'Hôtel Cowansville.
+
+Nous avons une procédure d'enregistrement semi-automatique, veuillez donc consulter notre politique d'enregistrement dans le lien suivant avant votre arrivée ou vous serez perdu.
+
+https://www.hotelcowansville.ca/en/check-in-policy/  <-(Click me)
+            """
         else:
-            message = f"Bonjour, {guest_firstname}, votre réservation a été confirmée au {data['startDate']}. Si vous avez des questions, veuillez nous envoyer un courriel à info@cowansvillehotel.com. If you have an emergency, please refer to our " \
-                      f"website for our cancellation policy. We look forward to welcoming you to our hotel."
+            message = f"""
+Bonjour, {guest_firstname}, votre réservation a été confirmée au {data['startDate']}.
+
+Veuillez cliquer ici -> https://www.hotelcowansville.ca/en/cancellation-policy/ pour consulter notre politique d'annulation, et le matin de votre date d'arrivée, vous recevrez notre politique d'enregistrement.
+ 
+Si vous avez des questions, vous pouvez répondre à ce message, ou envoyer un courriel à info@cowansvillehotel.com.
+            """
         send_message(guest_phone, message)
         logging.debug(
             f"{datetime.now()}Sent reservation confirmation message to {guest_firstname} {guest_lastname} at {guest_phone}")
