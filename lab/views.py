@@ -44,7 +44,7 @@ def on_sms_receive(request):  # Get the post QueryDict from the request.
             # Send translation to YuRuan
             message_chinese = translate(body, "ZH")
             send_message(RECEPTIONIST_PHONE_NUMBER, f"{phone}: {body} 翻译：{message_chinese}")
-            send_message(phone, "Nous avons reçu votre message.")
+            send_message(phone, "Nous avons reçu votre message, notre personnel vous contactera bientôt.")
             # TODO send message to YuRuan
             # send_message(MANAGER_PHONE_NUMBER, f"""
             # From: {phone}
