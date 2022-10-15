@@ -81,24 +81,19 @@ def on_reservation_created(request):
         if data['startDate'] == datetime.now().strftime("%Y-%m-%d") and datetime.now().hour >= 8:
             message = f"""
 Bonjour {guest_firstname},
-    
-Vous avez une réservation à l'Hôtel Cowansville.
 
-Nous avons une procédure d'enregistrement semi-automatique, veuillez donc consulter notre politique d'enregistrement dans le lien suivant avant votre arrivée ou vous serez perdu.
-
-https://www.hotelcowansville.ca/en/check-in-policy/  <-(Click me)
+Veuillez donc consulter notre politique d'enregistrement dans le lien suivant avant votre arrivée. https://www.hotelcowansville.ca/en/check-in-policy/
             """
         else:
             message = f"""
 Bonjour, {guest_firstname}, votre réservation a été confirmée au {data['startDate']}.
-
-Veuillez cliquer ici -> https://www.hotelcowansville.ca/en/cancellation-policy/ pour consulter notre politique d'annulation, et le matin de votre date d'arrivée, vous recevrez notre politique d'enregistrement.
- 
-Si vous avez des questions, vous pouvez répondre à ce message, ou envoyer un courriel à info@cowansvillehotel.com.
             """
         send_message(guest_phone, message)
         logging.debug(
             f"{datetime.now()}Sent reservation confirmation message to {guest_firstname} {guest_lastname} at {guest_phone}")
+
+        if data['startDate'] == datetime.now().strftime("%Y-%m-%d") and datetime.now().hour >= 14:
+            send_message(RECEPTIONIST_PHONE_NUMBER, f"New upcoming reservation at {datetime.now().strftime('%H:%M')}")
 
     except Exception as e:
         logging.error(f"{datetime.now()} - Error in cloudbeds webhook: " + str(e))
