@@ -89,8 +89,23 @@ Bonjour, {guest_firstname}, votre réservation a été confirmée au {data['star
         logging.debug(
             f"{datetime.now()}Sent reservation confirmation message to {guest_firstname} {guest_lastname} at {guest_phone}")
 
+        # send message to remind new guest today
         if data['startDate'] == datetime.now().strftime("%Y-%m-%d") and datetime.now().hour >= 14:
             send_message(RECEPTIONIST_PHONE_NUMBER, f"New upcoming reservation at {datetime.now().strftime('%H:%M')}")
+
+        # send message to adjust price
+        params = {
+            "startDate": data['startDate'],
+            "endDate": data['startDate'],
+        }
+        results = requests.get("https://hotels.cloudbeds.com/api/v1.1/getRooms",
+                               headers={"Authorization": f"Bearer {load_access_token()}"}, params=params)
+        rooms = results.json()["data"]["rooms"]
+        rooms_available = sum(room for room in rooms if not room['roomBlocked'])
+        send_message(DEVELOPER_PHONE_NUMBER, f"Rooms available: {rooms_available}")
+        if rooms_available < 5:
+            send_message(RECEPTIONIST_PHONE_NUMBER,
+                         f"Only {rooms_available} rooms available on {data['startDate']}, please adjust price.")
 
     except Exception as e:
         logging.error(f"{datetime.now()} - Error in cloudbeds webhook: " + str(e))
