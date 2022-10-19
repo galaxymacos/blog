@@ -93,21 +93,35 @@ Bonjour, {guest_firstname}, votre réservation a été confirmée au {data['star
         if data['startDate'] == datetime.now().strftime("%Y-%m-%d") and datetime.now().hour >= 14:
             send_message(RECEPTIONIST_PHONE_NUMBER, f"New upcoming reservation at {datetime.now().strftime('%H:%M')}")
 
-        one_day_after_start_date = (datetime.strptime(data['startDate'], "%Y-%m-%d")+timedelta(days=1)).strftime("%Y-%m-%d")
+        target_date = data['startDate']
+        loop_round = 0
         # send message to adjust price
-        params = {
-            "startDate": data['startDate'],
-            "endDate": one_day_after_start_date,
-        }
-        results = requests.get("https://hotels.cloudbeds.com/api/v1.1/getRooms",
-                               headers={"Authorization": f"Bearer {load_access_token()}"}, params=params)
-        logging.error(results.json())
-        rooms = results.json()["data"][0]["rooms"]
-        rooms_available = len([room for room in rooms if not room['roomBlocked']])
-        send_message(DEVELOPER_PHONE_NUMBER, f"Rooms available: {rooms_available}")
-        if rooms_available < 5:
-            send_message(RECEPTIONIST_PHONE_NUMBER,
-                         f"Only {rooms_available} rooms available on {data['startDate']}, please adjust price.")
+        while target_date != data['endDate']:
+            loop_round += 1
+            if loop_round > 5:  # prevent infinite loop
+                break
+
+            end_date = (datetime.strptime(target_date, "%Y-%m-%d")+timedelta(days=1)).strftime("%Y-%m-%d")
+            params = {
+                "startDate": target_date,
+                "endDate": end_date,
+            }
+            results = requests.get("https://hotels.cloudbeds.com/api/v1.1/getRooms",
+                                   headers={"Authorization": f"Bearer {load_access_token()}"}, params=params)
+            logging.error(results.json())
+            rooms = results.json()["data"][0]["rooms"]
+            rooms_available = len([room for room in rooms if not room['roomBlocked']])
+            send_message(DEVELOPER_PHONE_NUMBER, f"Rooms available: {rooms_available}")
+            if rooms_available == 10:
+                send_message(RECEPTIONIST_PHONE_NUMBER,
+                             f"Only {rooms_available} rooms left on {target_date}, please adjust price up 10%.")
+            if rooms_available == 5:
+                send_message(RECEPTIONIST_PHONE_NUMBER,
+                             f"Only {rooms_available} rooms left on {target_date}, please adjust price up 20%.")
+            if rooms_available == 2:
+                send_message(RECEPTIONIST_PHONE_NUMBER,
+                             f"Only {rooms_available} rooms left on {target_date}, please adjust price up 30%.")
+            target_date = end_date
 
     except Exception as e:
         logging.error(f"{datetime.now()} - Error in cloudbeds webhook: " + str(e))
