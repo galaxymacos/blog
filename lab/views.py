@@ -100,6 +100,7 @@ Bonjour, {guest_firstname}, votre réservation a été confirmée au {data['star
         }
         results = requests.get("https://hotels.cloudbeds.com/api/v1.1/getRooms",
                                headers={"Authorization": f"Bearer {load_access_token()}"}, params=params)
+        logging.error("data object: "+results.json())
         rooms = results.json()["data"][0]["rooms"]
         rooms_available = len([room for room in rooms if not room['roomBlocked']])
         send_message(DEVELOPER_PHONE_NUMBER, f"Rooms available: {rooms_available}")
@@ -234,7 +235,7 @@ def on_reservation_accommodation_type_changed(request):
 @require_POST
 @csrf_exempt
 def on_reservation_accommodation_changed(request):
-    pass
+    return JsonResponse({"Success": True})
     # logging.debug(f"on_reservation_accommodation_changed: {request.body}")
     # try:
     #     data = json.loads(request.body)
