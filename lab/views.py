@@ -93,10 +93,11 @@ Bonjour, {guest_firstname}, votre réservation a été confirmée au {data['star
         if data['startDate'] == datetime.now().strftime("%Y-%m-%d") and datetime.now().hour >= 14:
             send_message(RECEPTIONIST_PHONE_NUMBER, f"New upcoming reservation at {datetime.now().strftime('%H:%M')}")
 
+        one_day_after_start_date = (datetime.strptime(data['startDate'], "%Y-%m-%d")+timedelta(days=1)).strftime("%Y-%m-%d")
         # send message to adjust price
         params = {
             "startDate": data['startDate'],
-            "endDate": data['startDate'],
+            "endDate": one_day_after_start_date,
         }
         results = requests.get("https://hotels.cloudbeds.com/api/v1.1/getRooms",
                                headers={"Authorization": f"Bearer {load_access_token()}"}, params=params)
