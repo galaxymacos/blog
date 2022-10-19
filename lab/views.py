@@ -101,7 +101,7 @@ Bonjour, {guest_firstname}, votre réservation a été confirmée au {data['star
         results = requests.get("https://hotels.cloudbeds.com/api/v1.1/getRooms",
                                headers={"Authorization": f"Bearer {load_access_token()}"}, params=params)
         rooms = results.json()["data"][0]["rooms"]
-        rooms_available = sum(room for room in rooms if not room['roomBlocked'])
+        rooms_available = len([room for room in rooms if not room['roomBlocked']])
         send_message(DEVELOPER_PHONE_NUMBER, f"Rooms available: {rooms_available}")
         if rooms_available < 5:
             send_message(RECEPTIONIST_PHONE_NUMBER,
@@ -109,6 +109,7 @@ Bonjour, {guest_firstname}, votre réservation a été confirmée au {data['star
 
     except Exception as e:
         logging.error(f"{datetime.now()} - Error in cloudbeds webhook: " + str(e))
+        send_message(DEVELOPER_PHONE_NUMBER, f"Error: {e}")
         return JsonResponse({"Success": False, "Error": str(e)})
     return JsonResponse({"Success": True})
 
