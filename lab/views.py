@@ -85,7 +85,7 @@ Veuillez donc consulter notre politique d'enregistrement dans le lien suivant av
             message = f"""
 Bonjour, {guest_firstname}, votre réservation a été confirmée au {data['startDate']}.
             """
-        send_message(guest_phone, message)
+        # send_message(guest_phone, message)
         logging.debug(
             f"{datetime.now()}Sent reservation confirmation message to {guest_firstname} {guest_lastname} at {guest_phone}")
 
@@ -93,6 +93,7 @@ Bonjour, {guest_firstname}, votre réservation a été confirmée au {data['star
         if data['startDate'] == datetime.now().strftime("%Y-%m-%d") and datetime.now().hour >= 14:
             send_message(RECEPTIONIST_PHONE_NUMBER, f"New upcoming reservation at {datetime.now().strftime('%H:%M')}")
 
+        send_message(DEVELOPER_PHONE_NUMBER, f"New reservation")
         # send message to adjust price
         params = {
             "startDate": data['startDate'],
