@@ -100,7 +100,7 @@ Bonjour, {guest_firstname}, votre réservation a été confirmée au {data['star
         }
         results = requests.get("https://hotels.cloudbeds.com/api/v1.1/getRooms",
                                headers={"Authorization": f"Bearer {load_access_token()}"}, params=params)
-        logging.error("data object: "+results.json())
+        logging.error(results.json())
         rooms = results.json()["data"][0]["rooms"]
         rooms_available = len([room for room in rooms if not room['roomBlocked']])
         send_message(DEVELOPER_PHONE_NUMBER, f"Rooms available: {rooms_available}")
