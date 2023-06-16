@@ -75,33 +75,33 @@ def on_reservation_created(request):
         guest_phone = trim_phone(response.json()["data"]["phone"])
         guest_firstname = response.json()["data"]["firstName"]
         guest_lastname = response.json()["data"]["lastName"]
-        if data['startDate'] == datetime.now().strftime("%Y-%m-%d") and datetime.now().hour >= 8:
+        send_message(guest_phone, "Nous avons fait votre réservation, notre personnel vous contactera bientôt.")
+        if data['startDate'] == datetime.now().strftime("%Y-%m-%d"):
             message = f"""
 Bonjour {guest_firstname},
 
-Veuillez donc consulter notre politique d'enregistrement dans le lien suivant avant votre arrivée. https://www.hotelcowansville.ca/en/check-in-policy/
+Vous avez fait une réservation pour aujourd'hui, {data['startDate']}. Votre clé va être prêt à la reception à partir de 15h00 pour check-in automatiquement. Si vous avez besoin de plus d'informations, n'hésitez pas à nous contacter à (450) 263-7331. 
             """
         else:
             message = f"""
 Bonjour, {guest_firstname}, votre réservation a été confirmée au {data['startDate']}.
             """
-        # send_message(guest_phone, message)
-        logging.debug(
-            f"{datetime.now()}Sent reservation confirmation message to {guest_firstname} {guest_lastname} at {guest_phone}")
+        send_message(guest_phone, message)
 
         # send message to remind new guest today
-        if data['startDate'] == datetime.now().strftime("%Y-%m-%d") and datetime.now().hour >= 14:
-            send_message(RECEPTIONIST_PHONE_NUMBER, f"New upcoming reservation at {datetime.now().strftime('%H:%M')}")
+        if data['startDate'] == datetime.now().strftime("%Y-%m-%d"):
+            send_message(RECEPTIONIST_PHONE_NUMBER, f"New same-day reservation for {guest_firstname} {guest_lastname}")
 
         target_date = data['startDate']
+        #
         loop_round = 0
         # send message to adjust price
         while target_date != data['endDate']:
             loop_round += 1
-            if loop_round > 5:  # prevent infinite loop
+            if loop_round > 7:  # prevent infinite loop
                 break
 
-            end_date = (datetime.strptime(target_date, "%Y-%m-%d")+timedelta(days=1)).strftime("%Y-%m-%d")
+            end_date = (datetime.strptime(target_date, "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d")
             params = {
                 "startDate": target_date,
                 "endDate": end_date,
@@ -111,14 +111,13 @@ Bonjour, {guest_firstname}, votre réservation a été confirmée au {data['star
             logging.error(results.json())
             rooms = results.json()["data"][0]["rooms"]
             rooms_available = len([room for room in rooms if not room['roomBlocked']])
-            send_message(DEVELOPER_PHONE_NUMBER, f"Rooms available: {rooms_available}")
-            if rooms_available == 10:
+            if rooms_available == 15:
                 send_message(RECEPTIONIST_PHONE_NUMBER,
                              f"Only {rooms_available} rooms left on {target_date}, please adjust price up 10%.")
-            if rooms_available == 5:
+            if rooms_available == 10:
                 send_message(RECEPTIONIST_PHONE_NUMBER,
                              f"Only {rooms_available} rooms left on {target_date}, please adjust price up 20%.")
-            if rooms_available == 2:
+            if rooms_available == 5:
                 send_message(RECEPTIONIST_PHONE_NUMBER,
                              f"Only {rooms_available} rooms left on {target_date}, please adjust price up 30%.")
             target_date = end_date
@@ -215,7 +214,7 @@ def on_reservation_dates_changed(request):
 La date de votre réservation a été modifiée.
 
 Arriver: {data['startDate']}
- 
+
 Partir: {data['endDate']}
 """)
     except Exception as e:
