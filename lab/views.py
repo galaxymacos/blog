@@ -42,9 +42,9 @@ def on_sms_receive(request):  # Get the post QueryDict from the request.
             body = data['Body']
             logging.debug(f"{datetime.now()}: Received message from {phone} with body {body}")
             # Send translation to YuRuan
-            message_chinese = translate(body, "ZH")
-            send_message(RECEPTIONIST_PHONE_NUMBER, f"{phone}: {body} 翻译：{message_chinese}")
-            send_message(phone, "Nous avons reçu votre message, notre personnel vous contactera bientôt.")
+            # message_chinese = translate(body, "ZH")
+            send_message(RECEPTIONIST_PHONE_NUMBER, f"{phone}: {body}")
+            # send_message(phone, "Nous avons reçu votre message, notre personnel vous contactera bientôt.")
             # TODO send message to YuRuan
             # send_message(MANAGER_PHONE_NUMBER, f"""
             # From: {phone}
@@ -75,7 +75,6 @@ def on_reservation_created(request):
         guest_phone = trim_phone(response.json()["data"]["phone"])
         guest_firstname = response.json()["data"]["firstName"]
         guest_lastname = response.json()["data"]["lastName"]
-        send_message(guest_phone, "Nous avons fait votre réservation, notre personnel vous contactera bientôt.")
         if data['startDate'] == datetime.now().strftime("%Y-%m-%d"):
             message = f"""
 Bonjour {guest_firstname},
@@ -84,7 +83,7 @@ Vous avez fait une réservation pour aujourd'hui, {data['startDate']}. Votre cl�
             """
         else:
             message = f"""
-Bonjour, {guest_firstname}, votre réservation a été confirmée au {data['startDate']}.
+Bonjour, {guest_firstname}, votre réservation a été confirmée au {data['startDate']}. Si vous avez besoin de plus d'informations, n'hésitez pas à nous contacter à info@hotelvowansville.ca. 
             """
         send_message(guest_phone, message)
 
@@ -132,6 +131,7 @@ Bonjour, {guest_firstname}, votre réservation a été confirmée au {data['star
 @require_POST
 @csrf_exempt
 def on_reservation_status_changed(request):
+    data = json.loads(request.body)
     try:
         data = json.loads(request.body)
 
@@ -148,9 +148,7 @@ def on_reservation_status_changed(request):
                 f"""
 Bonjour, {guest['firstName']} {guest['lastName']}
 
-Notre système indique que vous ne vous êtes pas enregistré la nuit dernière, nous avons donc marqué votre réservation comme non-présentation. Veuillez noter qu'aucun remboursement ne sera émis pour les réservations de non-présentation.
-
-Hôtel Cowansville
+Notre système indique que vous ne vous êtes pas enregistré à {data['startDate']}, nous avons donc marqué votre réservation comme non-présentation. Veuillez noter qu'aucun remboursement ne sera émis pour les réservations de non-présentation.
  """)
         elif data['status'] == "canceled":
             send_message(
@@ -158,7 +156,7 @@ Hôtel Cowansville
                 f"""
 Bonjour, {guest['firstName']} {guest['lastName']}
 
-Votre réservation est annulée. Des frais d'annulation peuvent être appliqués selon notre politique d'annulation. Veuillez vous référer à https://hotelcowansville.ca/cancellation-policy pour plus d'informations.
+Votre réservation {data['reservationID']} est annulée. Veuillez vous référer à https://hotelcowansville.ca/cancellation-policy pour plus d'informations.
 
 Hôtel Cowansville
 """)
@@ -170,11 +168,11 @@ Bonjour {guest['firstName']},
 
 Merci d'avoir choisi l'Hôtel Cowansville.
 
-Veuillez suivre nos règles d'hôtel à https://www.hotelcowansville.ca/hotel-rules.
+Veuillez suivre nos règles d'hôtel à https://www.hotelcowansville.ca/hotel-rules pendant votre séjour.
 
-Votre facture peut être téléchargée sur hotelcowansville.ca/invoice/{reservation_id} à votre date de départ.
+Votre reçu peut être trouvé sur hotelcowansville.ca/invoice/{reservation_id} à partir de {data['endDate']}.
 
-N'hésitez pas à répondre à ce message si vous avez des questions.
+N'hésitez pas à nous contacter à (450) 263-7331 si vous avez des questions.
 """)
 
     except Exception as e:
@@ -238,7 +236,7 @@ def on_reservation_accommodation_type_changed(request):
         room_type_id = data['roomTypeId']
         room_type_name = get_room_type_name(room_type_id)
         logging.debug(f"Your reservation room type has been changed to {room_type_name}")
-        send_message(guest_phone, f"Your reservation room type has been changed to {room_type_name}")
+        send_message(guest_phone, f"Le type de chambre de votre réservation a été modifié en {room_type_name}")
     except Exception as e:
         logging.error(f"{datetime.now()} - Error in reservation accommodation type change webhook: " + str(e))
         return JsonResponse({"Success": False, "Error": str(e)})
