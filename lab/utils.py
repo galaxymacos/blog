@@ -69,7 +69,7 @@ def save_refresh_token(refresh_token):
 def get_reservation_by_id(reservation_id):
     # Return the reservation data object
     response = requests.get(
-        "https://hotels.cloudbeds.com/api/v1.1/getGuest",
+        "https://hotels.cloudbeds.com/api/v1.1/getReservation",
         headers={'Authorization': f'Bearer {load_access_token()}'},
         params={"reservationID": reservation_id}
     )
