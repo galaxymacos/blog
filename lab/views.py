@@ -90,8 +90,8 @@ Bonjour, {guest_firstname}, votre réservation a été confirmée au {data['star
             send_message(guest_phone, message)
             reservation = get_reservation_by_id(reservation_id)
             if reservation:
-                send_message(RECEPTIONIST_PHONE_NUMBER, reservation['source'])
-                if reservation['source'] not in ("Website/Booking Engine", "Phone", "Email", "Walk-in", "Other"):
+                send_message(RECEPTIONIST_PHONE_NUMBER, reservation['sourceName'])
+                if reservation['sourceName'] not in ("Website/Booking Engine", "Phone", "Email", "Walk-in", "Other"):
                     message_promotion = f"Savez-vous que vous pouvez économiser 10% en réservant directement sur notre site web : https://hotelcowansville.ca, et profitez de notre réduction pour les entreprises si vous réservez 3 nuits ou plus ? Consultez notre site web pour plus de détails."
                     send_message(guest_phone, message_promotion)
             else: # if reservation not found, send message to receptionist
