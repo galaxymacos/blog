@@ -81,11 +81,16 @@ Bonjour {guest_firstname},
 
 Vous avez fait une réservation pour aujourd'hui, {data['startDate']}. Votre clé va être prêt à la reception à partir de 15h00 pour check-in automatiquement. Si vous avez besoin de plus d'informations, n'hésitez pas à nous contacter à (450) 263-7331. 
             """
+            send_message(guest_phone, message)
         else:
             message = f"""
 Bonjour, {guest_firstname}, votre réservation a été confirmée au {data['startDate']}. Si vous avez besoin de plus d'informations, n'hésitez pas à nous contacter à info@hotelvowansville.ca. 
             """
-        send_message(guest_phone, message)
+            send_message(guest_phone, message)
+            send_message(RECEPTIONIST_PHONE_NUMBER, data['source'])
+            if data['source'] not in ("Website/Booking Engine", "Phone", "Email", "Walk-in", "Other"):
+                message_promotion = f"Savez-vous que vous pouvez économiser 10% en réservant directement sur notre site web : https://hotelcowansville.ca, et profitez de notre réduction pour les entreprises si vous réservez 3 nuits ou plus ? Consultez notre site web pour plus de détails."
+                send_message(guest_phone, message_promotion)
 
         # send message to remind new guest today
         if data['startDate'] == datetime.now().strftime("%Y-%m-%d"):
