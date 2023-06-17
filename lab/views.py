@@ -86,16 +86,16 @@ Vous avez fait une réservation pour aujourd'hui, {data['startDate']}. Votre cl�
         else:
             message = f"""
 Bonjour, {guest_firstname}, votre réservation a été confirmée au {data['startDate']}. Si vous avez besoin de plus d'informations, n'hésitez pas à nous contacter à info@hotelvowansville.ca. 
-            """
+            """ 
             send_message(guest_phone, message)
             reservation = get_reservation_by_id(reservation_id)
             if reservation:
-                send_message(RECEPTIONIST_PHONE_NUMBER, reservation['source'])
-                if reservation['source'] not in ("Website/Booking Engine", "Phone", "Email", "Walk-in", "Other"):
-                    message_promotion = f"Savez-vous que vous pouvez économiser 10% en réservant directement sur notre site web : https://hotelcowansville.ca, et profitez de notre réduction pour les entreprises si vous réservez 3 nuits ou plus ? Consultez notre site web pour plus de détails."
+                if reservation['source'] in ("Booking.com", "Expedia", "Airbnb"):
+                    message_promotion = f"Savez-vous que vous pouvez économiser 15% en réservant directement sur notre site web : https://hotelcowansville.ca, et profitez de notre réduction pour les entreprises si vous réservez 3 nuits ou plus ? Consultez notre site web pour plus de détails."
                     send_message(guest_phone, message_promotion)
             else: # if reservation not found, send message to receptionist
-                send_message(RECEPTIONIST_PHONE_NUMBER, f"Can't find reservation {reservation_id} in Cloudbeds")
+                send_message(DEVELOPER_PHONE_NUMBER, f"Error Can't find reservation {reservation_id} after on_reservation_created")
+                logging.error(f"Error Can't find reservation {reservation_id} after on_reservation_created")
 
 
         # send message to remind new guest today
