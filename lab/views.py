@@ -10,7 +10,7 @@ from twilio.rest import Client
 from blog.settings import *
 from deepl.util import translate
 from lab.utils import get_room_type_name, get_room_name, load_access_token, save_access_token, save_refresh_token, \
-    load_refresh_token, get_reservation_by_id
+    load_refresh_token, get_reservation_by_id, need_to_increase_price
 
 
 # Create your views here.
@@ -76,17 +76,19 @@ def on_reservation_created(request):
         guest_phone = trim_phone(response.json()["data"]["phone"])
         guest_firstname = response.json()["data"]["firstName"]
         guest_lastname = response.json()["data"]["lastName"]
-        if data['startDate'] == datetime.now().strftime("%Y-%m-%d"):
+        start_date = datetime.strptime(data['startDate'], "%Y-%m-%d")
+        if start_date.date() == datetime.now().date():
             message = f"""
 Bonjour {guest_firstname},
 
 Vous avez fait une réservation pour aujourd'hui, {data['startDate']}. Votre clé va être prêt à la reception à partir de 15h00 pour check-in automatiquement. Si vous avez besoin de plus d'informations, n'hésitez pas à nous contacter à (450) 263-7331. 
             """
             send_message(guest_phone, message)
+            send_message(RECEPTIONIST_PHONE_NUMBER, f"New same-day reservation for {guest_firstname} {guest_lastname}")
         else:
             message = f"""
 Bonjour, {guest_firstname}, votre réservation a été confirmée au {data['startDate']}. Si vous avez besoin de plus d'informations, n'hésitez pas à nous contacter à info@hotelvowansville.ca. 
-            """ 
+            """
             send_message(guest_phone, message)
         reservation = get_reservation_by_id(reservation_id)
         if reservation:
@@ -98,40 +100,24 @@ Bonjour, {guest_firstname}, votre réservation a été confirmée au {data['star
                          f"Error Can't find reservation {reservation_id} after on_reservation_created")
             logging.error(f"Error Can't find reservation {reservation_id} after on_reservation_created")
 
+        # loop over all dates from start date to end date
 
-        # send message to remind new guest today
-        if data['startDate'] == datetime.now().strftime("%Y-%m-%d"):
-            send_message(RECEPTIONIST_PHONE_NUMBER, f"New same-day reservation for {guest_firstname} {guest_lastname}")
+        end_date = datetime.strptime(data['endDate'], "%Y-%m-%d")
+        delta = end_date - start_date
+        for i in range(delta.days):
 
-        target_date = data['startDate']
-        #
-        loop_round = 0
-        # send message to adjust price
-        while target_date != data['endDate']:
-            loop_round += 1
-            if loop_round > 7:  # prevent infinite loop
-                break
-
-            end_date = (datetime.strptime(target_date, "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d")
+            date = start_date + timedelta(days=i)
             params = {
-                "startDate": target_date,
-                "endDate": end_date,
+                "startDate": date.strftime("%Y-%m-%d"),
+                "endDate": date.strftime("%Y-%m-%d"),
             }
             results = requests.get("https://hotels.cloudbeds.com/api/v1.1/getRooms",
                                    headers={"Authorization": f"Bearer {load_access_token()}"}, params=params)
-            logging.error(results.json())
             rooms = results.json()["data"][0]["rooms"]
             rooms_available = len([room for room in rooms if not room['roomBlocked']])
-            if rooms_available == 15:
+            if need_to_increase_price((date-datetime.now().date()).days, rooms_available):
                 send_message(RECEPTIONIST_PHONE_NUMBER,
-                             f"Only {rooms_available} rooms left on {target_date}, please adjust price up 10%.")
-            if rooms_available == 10:
-                send_message(RECEPTIONIST_PHONE_NUMBER,
-                             f"Only {rooms_available} rooms left on {target_date}, please adjust price up 20%.")
-            if rooms_available == 5:
-                send_message(RECEPTIONIST_PHONE_NUMBER,
-                             f"Only {rooms_available} rooms left on {target_date}, please adjust price up 30%.")
-            target_date = end_date
+                             f"{rooms_available} rooms left on {date.strftime('%Y-%m-%d')}, adjust price.")
 
     except Exception as e:
         logging.error(f"{datetime.now()} - Error in on_reservation_created: " + str(e))
@@ -172,19 +158,19 @@ Votre réservation {data['reservationID']} est annulée. Veuillez vous référer
 Hôtel Cowansville
 """)
         # elif data['status'] == "checked_in":
-#             send_message(
-#                 guest_phone,
-#                 f"""
-# Bonjour {guest['firstName']},
-#
-# Merci d'avoir choisi l'Hôtel Cowansville.
-#
-# Veuillez suivre nos règles d'hôtel à https://www.hotelcowansville.ca/hotel-rules pendant votre séjour.
-#
-# Votre reçu peut être trouvé sur hotelcowansville.ca/invoice/{reservation_id} à partir de {data['endDate']}.
-#
-# N'hésitez pas à nous contacter à (450) 263-7331 si vous avez des questions.
-# """)
+    #             send_message(
+    #                 guest_phone,
+    #                 f"""
+    # Bonjour {guest['firstName']},
+    #
+    # Merci d'avoir choisi l'Hôtel Cowansville.
+    #
+    # Veuillez suivre nos règles d'hôtel à https://www.hotelcowansville.ca/hotel-rules pendant votre séjour.
+    #
+    # Votre reçu peut être trouvé sur hotelcowansville.ca/invoice/{reservation_id} à partir de {data['endDate']}.
+    #
+    # N'hésitez pas à nous contacter à (450) 263-7331 si vous avez des questions.
+    # """)
 
     except Exception as e:
         logging.error(f"{datetime.now()} - Error in reservation status change webhook: " + str(e))

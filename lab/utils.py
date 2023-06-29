@@ -66,6 +66,7 @@ def save_refresh_token(refresh_token):
     with open(BASE_DIR / "refresh_token.txt", "w") as f:
         f.write(refresh_token)
 
+
 def get_reservation_by_id(reservation_id):
     # Return the reservation data object
     response = requests.get(
@@ -76,3 +77,15 @@ def get_reservation_by_id(reservation_id):
     if not response.ok:
         return None
     return response.json()['data']
+
+
+def need_to_increase_price(date_from_now, room_left):
+    try:
+        if date_from_now < 0:
+            raise Exception("date_from_now < 0")
+        if date_from_now == 0:
+            return room_left <= 3
+        if float(room_left) / float(date_from_now) <= 1.5:
+            return True
+    except Exception as e:
+        logging.error(f"{datetime.now()} - Xun - need_to_increase_price fail - {e}")
