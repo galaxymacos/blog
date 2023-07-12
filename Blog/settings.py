@@ -37,7 +37,7 @@ INSTALLED_APPS = [
     'corsheaders',
 ]
 
-ALLOWED_HOSTS = ['xunruan.ca', 'www.xunruan.ca']
+ALLOWED_HOSTS = ['137.184.71.252', 'xunruan.ca', 'www.xunruan.ca', 'localhost', '127.0.0.1']
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
