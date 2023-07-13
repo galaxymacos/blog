@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'corsheaders',
+    'api',
 ]
 
 ALLOWED_HOSTS = ['45.77.151.206', 'xunruan.ca', 'www.xunruan.ca', 'localhost', '127.0.0.1']
