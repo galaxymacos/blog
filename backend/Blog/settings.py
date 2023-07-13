@@ -11,11 +11,15 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 import os
 from pathlib import Path
-from dotenv import dotenv_values
 
-DEBUG = dotenv_values("DEBUG")
+from dotenv import load_dotenv
 
+# Load the .env file
+load_dotenv()
 
+DEBUG = os.getenv("DEBUG")
+
+print(DEBUG)
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -93,13 +97,14 @@ else:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql_psycopg2',
-            'NAME': 'blog',
-            'USER': 'xun',
+            'NAME': 'blogdb',
+            'USER': 'blogdbuser',
             'PASSWORD': 'wy673581',
             'HOST': 'localhost',
             'PORT': '',
         }
     }
+print(DEBUG)
 
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
