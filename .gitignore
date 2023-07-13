@@ -134,5 +134,4 @@ node_modules
 *.log
 
 
-backend/.local_settings.py
 backend/staticfiles/

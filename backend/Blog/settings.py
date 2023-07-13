@@ -9,12 +9,12 @@ https://docs.djangoproject.com/en/4.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
-
+import os
 from pathlib import Path
-try:
-    from .local_settings import *
-except ImportError:
-    pass
+from dotenv import dotenv_values
+
+DEBUG = dotenv_values("DEBUG")
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -24,9 +24,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-vd(x!=rpm2p$@!s*vfko@2tnzl2a4#*6fr)=c&cvl3ig)ghlu%'
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
 
 
 
@@ -43,7 +40,7 @@ INSTALLED_APPS = [
     'corsheaders',
 ]
 
-ALLOWED_HOSTS = ['207.246.95.9', 'xunruan.ca', 'www.xunruan.ca', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['45.77.151.206', 'xunruan.ca', 'www.xunruan.ca', 'localhost', '127.0.0.1']
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
@@ -85,12 +82,24 @@ WSGI_APPLICATION = 'Blog.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+if DEBUG:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'NAME': 'blog',
+            'USER': 'xun',
+            'PASSWORD': 'wy673581',
+            'HOST': 'localhost',
+            'PORT': '',
+        }
+    }
 
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
@@ -133,3 +142,5 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
